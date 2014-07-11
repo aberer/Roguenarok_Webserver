@@ -1,2 +1,0 @@
-class ExcludedTaxon < ActiveRecord::Base
-end
