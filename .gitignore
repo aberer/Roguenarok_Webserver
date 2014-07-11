@@ -1,4 +1,5 @@
-./config/*
-./public/jobs/*
-./log/*
-./testfiles/*
+public/jobs/*
+log/*
+testfiles/*
+config/environment.rb
+db/*

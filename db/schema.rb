@@ -30,7 +30,7 @@ ActiveRecord::Schema.define(:version => 20120115161609) do
   end
 
   create_table "rogue_taxa_analyses", :force => true do |t|
-    t.integer  "jobid"
+    t.integer  "jobid",      :limit => 9
     t.datetime "created_at"
     t.datetime "updated_at"
   end
