@@ -1,4 +1,5 @@
 public/jobs/*
+!public/jobs/.gitkeep
 log/*
 testfiles/*
 db/*sqlite3
