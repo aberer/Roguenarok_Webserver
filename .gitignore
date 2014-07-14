@@ -1,5 +1,4 @@
 public/jobs/*
 log/*
 testfiles/*
-config/environment.rb
 db/*sqlite3
