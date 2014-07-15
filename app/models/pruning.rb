@@ -32,6 +32,8 @@ attr_accessor :jobid, :threshold, :user_def
     results_path           = File.join(path,"results")
     current_tree_file      = File.join(path,"current_tree")
     logs_path              = File.join(path,"logs")
+    log_out                = File.join(logs_path,"submit.sh.out")
+    log_err                = File.join(logs_path,"submit.sh.err")
 
     current_logfile = File.join(path,"current.log")
     if File.exists?(current_logfile) 
@@ -98,32 +100,26 @@ attr_accessor :jobid, :threshold, :user_def
     prune = File.join(RAILS_ROOT,"bioprogs","roguenarok","rnr-prune")
     raxml = File.join(RAILS_ROOT,"bioprogs","raxml","raxmlHPC-SSE3")
 
-    command_create_results_folder = "mkdir #{results_path}"
-    if File.exists?(results_path) && File.directory?(results_path)
-      command_create_results_folder = ""
-    end
+    command_create_results_folder = "mkdir -p #{results_path}"
+    system command_create_results_folder
+
+    command_create_logs_folder = "mkdir -p #{logs_path}"
+    system command_create_logs_folder
     
-    command_create_logs_folder = "mkdir #{logs_path}"
-    if File.exists?(logs_path) && File.directory?(logs_path)
-      command_create_logs_folder = ""
-    end
-    
+    command_change_directory = "cd #{path}"
+
     command_rnr_prune = File.join(RAILS_ROOT,"bioprogs","roguenarok","rnr-prune")
 
-    command_update_working_files_after_pruning = "cp #{pruned_bts_file } #{bootstrap_treeset_file}; cp #{pruned_best_tree_file } #{best_tree_file};"
+    command_update_working_files_after_pruning = "cp #{pruned_bts_file } #{bootstrap_treeset_file}\n cp #{pruned_best_tree_file } #{best_tree_file};"
 
     command_raxml = File.join(RAILS_ROOT,"bioprogs","raxml","raxmlHPC-SSE3")
 
-    command_update_working_files_after_raxml = "cp #{raxml_tree_file } #{current_tree_file}; cp #{raxml_best_tree_file } #{current_tree_file};"
+    command_update_working_files_after_raxml = "cp #{raxml_tree_file } #{current_tree_file}\n cp #{raxml_best_tree_file } #{current_tree_file};"
 
     resultfiles_rnr = File.join(path,"RnR*")
     resultfiles_raxml = File.join(path,"RAxML*")
-    command_save_result_files="mv #{resultfiles_raxml} #{results_path}; mv #{resultfiles_rnr} #{results_path}"
+    command_save_result_files="mv #{resultfiles_raxml} #{results_path}\n mv #{resultfiles_rnr} #{results_path}"
 
-    logfiles = File.join(path,"submit.sh.*")
-    current_logfile = File.join(path,"current.log")
-    command_save_log_files = "cp #{logfiles} #{current_logfile};mv #{logfiles} #{logs_path}"
-   
     opts_rnr_prune.each_key {|k| command_rnr_prune  = command_rnr_prune+" "+k+" #{opts_rnr_prune[k]} "}
     opts_raxml.each_key {|k| command_raxml  = command_raxml+" "+k+" #{opts_raxml[k]} "}
 
@@ -134,20 +130,18 @@ attr_accessor :jobid, :threshold, :user_def
     end
 
     File.open(shell_file,'wb'){|file| 
-      file.write(command_create_results_folder+"\n")
-      file.write(command_create_logs_folder+"\n")
+      file.write(command_change_directory+"\n")
       file.write(command_rnr_prune+"\n")
       file.write(command_update_working_files_after_pruning+"\n")
       file.write(command_raxml+"\n")
       file.write(command_update_working_files_after_raxml+"\n")
       file.write(command_save_result_files+"\n")
       file.write(command_send_email+"\n")
-      file.write("echo done!\n")
-      file.write(command_save_log_files+"\n")
+      file.write("echo done! > #{current_logfile}\n")
     }
 
     # submit shellfile into batch system 
-    system "qsub -o #{path} -j y #{shell_file} "
+    qsub_command = "qsub -o #{log_out} -e #{log_err} #{shell_file}"
+    system qsub_command
   end
-
 end

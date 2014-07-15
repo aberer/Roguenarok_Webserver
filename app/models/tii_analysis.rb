@@ -7,11 +7,13 @@ class TiiAnalysis < ActiveRecord::Base
 
   def execute(link)
     path                   = File.join(RAILS_ROOT,"public","jobs",self.jobid)
-    bootstrap_treeset_file = File.join(path, "bootstrap_treeset_file")
-    best_tree_file         = File.join(path, "best_tree")
+    bootstrap_treeset_file = File.join(path,"bootstrap_treeset_file")
+    best_tree_file         = File.join(path,"best_tree")
     excluded_taxa_file     = File.join(path,"excluded_taxa")
     results_path           = File.join(path,"results")
     logs_path              = File.join(path,"logs")
+    log_out                = File.join(logs_path,"submit.sh.out")
+    log_err                = File.join(logs_path,"submit.sh.err")
     
     current_logfile = File.join(path,"current.log")
     if File.exists?(current_logfile) 
@@ -37,15 +39,13 @@ class TiiAnalysis < ActiveRecord::Base
 
     shell_file =File.join(RAILS_ROOT,"public","jobs",self.jobid,"submit.sh")
 
-    command_create_results_folder = "mkdir #{results_path}"
-    if File.exists?(results_path) && File.directory?(results_path)
-      command_create_results_folder = ""
-    end
+    command_create_results_folder = "mkdir -p #{results_path}"
+    system command_create_results_folder
 
-    command_create_logs_folder = "mkdir #{logs_path}"
-    if File.exists?(logs_path) && File.directory?(logs_path)
-      command_create_logs_folder = ""
-    end
+    command_create_logs_folder = "mkdir -p #{logs_path}"
+    system command_create_logs_folder
+
+    command_change_directory = "cd #{path}"
 
     command_rnr_tii = File.join(RAILS_ROOT,"bioprogs","roguenarok","rnr-lsi")
     opts.each_key {|k| command_rnr_tii  = command_rnr_tii+" "+k+" #{opts[k]} "}
@@ -53,10 +53,6 @@ class TiiAnalysis < ActiveRecord::Base
     resultfiles = File.join(path,"RnR*")
     command_save_result_files="mv #{resultfiles} #{results_path}"
 
-    logfiles = File.join(path,"submit.sh.*")
-    current_logfile = File.join(path,"current.log")
-    command_save_log_files = "cp #{logfiles} #{current_logfile};mv #{logfiles} #{logs_path}"
-  
     command_send_email = "";
     if !(email.nil? || email.empty?)
       command_send_email = File.join(RAILS_ROOT,"bioprogs","ruby","send_email.rb")
@@ -64,17 +60,15 @@ class TiiAnalysis < ActiveRecord::Base
     end
   
     File.open(shell_file,'wb'){|file| 
-      file.write(command_create_results_folder+"\n")
-      file.write(command_create_logs_folder+"\n")
+      file.write(command_change_directory+"\n")
       file.write(command_rnr_tii+"\n")
       file.write(command_save_result_files+"\n")
       file.write(command_send_email+"\n")
-      file.write("echo done!\n")
-      file.write(command_save_log_files+"\n")
+      file.write("echo done! > #{current_logfile}\n")
     }
 
     # submit shellfile into batch system 
-    system "qsub -o #{path} -j y #{shell_file} "
+    qsub_command = "qsub -o #{log_out} -e #{log_err} #{shell_file}"
+    system qsub_command
   end
-
 end

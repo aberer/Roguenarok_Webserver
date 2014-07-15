@@ -119,8 +119,8 @@ class RoguenarokController < ApplicationController
 
   def work
     @jobid = params[:jobid]
-    path = File.join(RAILS_ROOT,"public","jobs",@jobid,"results")
-    job_path =  File.join(RAILS_ROOT,"public","jobs",@jobid)
+    job_path = File.join(RAILS_ROOT,"public","jobs",@jobid)
+    path     = File.join(job_path,"results")
     ### get result files
     @files = []
     @file_names = []
