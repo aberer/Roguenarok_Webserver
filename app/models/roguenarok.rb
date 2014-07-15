@@ -37,7 +37,7 @@ class Roguenarok < ActiveRecord::Base
     end
 
     # validate excluded taxa file
-    if !self.excluded_taxa.nil?
+    if !self.excluded_taxa.nil? && !self.excluded_taxa.eql?("")
       e = ExcludedTaxaFileParser.new(self.excluded_taxa)
       errors.add(:excluded_taxa, e.error) if !e.valid_format
       if e.valid_format

@@ -93,7 +93,7 @@ class RoguenarokController < ApplicationController
         taxon.save
       end
       
-      if !taxa_to_exclude_file.nil?
+      if !taxa_to_exclude_file.nil? && !taxa_to_exclude_file.eql?("")
         ex_taxa = File.open(@job.excluded_taxa, 'rb').readlines
         @job.excludeTaxa(ex_taxa)
       end
