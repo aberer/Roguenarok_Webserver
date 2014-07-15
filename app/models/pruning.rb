@@ -80,7 +80,7 @@ attr_accessor :jobid, :threshold, :user_def
     if self.threshold.eql?("mr")
       opts_raxml["-J"] = "MR"
     elsif self.threshold.eql?("mre")
-      otps_raxml["-J"] = "MRE"
+      opts_raxml["-J"] = "MRE"
     elsif self.threshold.eql?("user")
       opts_raxml["-J"] = "MR"
     elsif self.threshold.eql?("strict")
