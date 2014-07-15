@@ -50,12 +50,12 @@ a:hover {
 #header {
     line-height: 76px;
     height: 85px;
-    background-image: url(/images/header.png);
+    background-image: url(../images/header.png);
 }
 
 #navigation {
     height:30px;
-    background-image: url(/images/navigation.png);
+    background-image: url(../images/navigation.png);
     line-height:22px;
 }
 
@@ -101,21 +101,21 @@ a:hover {
     margin-bottom:10px;
     width: 628px;
     vertical-align: bottom;
-    background: url(/images/separator.png) repeat-x;
+    background: url(../images/separator.png) repeat-x;
 }
 
 #separator_bottom {
     line-height:1px;
     width: 628px;
     margin-top:80px;
-    background: url(/images/separator.png) repeat-x;
+    background: url(../images/separator.png) repeat-x;
 }
 
 #separator_short {
     line-height:18px;
     width: 420px;
     vertical-align: bottom;
-    background: url(/images/separator.png) repeat-x;
+    background: url(../images/separator.png) repeat-x;
 }
 
 #footer {
