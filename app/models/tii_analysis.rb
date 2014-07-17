@@ -47,7 +47,7 @@ class TiiAnalysis < ActiveRecord::Base
       command_create_logs_folder = ""
     end
 
-    command_rnr_tii = File.join(RAILS_ROOT,"bioprogs","roguenarok","rnr-lsi")
+    command_rnr_tii = File.join(RAILS_ROOT,"lib","rnr-tii")
     opts.each_key {|k| command_rnr_tii  = command_rnr_tii+" "+k+" #{opts[k]} "}
     
     resultfiles = File.join(path,"RnR*")
@@ -56,25 +56,29 @@ class TiiAnalysis < ActiveRecord::Base
     logfiles = File.join(path,"submit.sh.*")
     current_logfile = File.join(path,"current.log")
     command_save_log_files = "cp #{logfiles} #{current_logfile};mv #{logfiles} #{logs_path}"
-  
-    command_send_email = "";
-    if !(email.nil? || email.empty?)
-      command_send_email = File.join(RAILS_ROOT,"bioprogs","ruby","send_email.rb")
-      command_send_email = command_send_email + " -e #{email} -l #{link}"
-    end
-  
+
     File.open(shell_file,'wb'){|file| 
       file.write(command_create_results_folder+"\n")
       file.write(command_create_logs_folder+"\n")
       file.write(command_rnr_tii+"\n")
       file.write(command_save_result_files+"\n")
-      file.write(command_send_email+"\n")
       file.write("echo done!\n")
       file.write(command_save_log_files+"\n")
     }
 
     # submit shellfile into batch system 
     system "qsub -o #{path} -j y #{shell_file} "
+  end
+
+
+  def getName
+    result = "tii_" + self.id.to_s
+    return result
+  end
+
+  def getFile
+    file = "#{RAILS_ROOT}/public/jobs/#{self.jobid}/results/RnR-tii_taxonomicInstabilityIndex.#{self.jobid}_#{self.id}"
+    return file
   end
 
 end

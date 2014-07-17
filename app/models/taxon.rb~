@@ -1,4 +1,0 @@
-class Taxon < ActiveRecord::Base
-  belongs_to :roguenarok
-  has_one :excluded_taxon
-end

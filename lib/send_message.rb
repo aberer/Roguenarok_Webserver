@@ -1,9 +1,9 @@
 #!/usr/bin/ruby
 
-RAILS_ROOT = File.expand_path(File.join(File.dirname(__FILE__), '../..'))
-require 'net/smtp'
-require "#{File.dirname(__FILE__)}/../../config/environment.rb"
-SERVER_NAME = ENV['SERVER_NAME']
+require 'rubygems'
+require 'tlsmail'
+require 'time'
+# require 'parseconfig'
 
 ### Main script that handles the messages sent by the contact formular on the webpage. It gets four command line parameters, 
 ### -n name 
@@ -53,28 +53,43 @@ class SendMessage
     end
     @message = @message.gsub(/\_\_/," ")
     @message =  @message.gsub(/\#n\#/,"\n")
-    @email_address1 = "Denis.Krompass@campus.lmu.de"
-    @email_address2 = "stamatak@in.tum.de"
-    @email_address3 = "bergers@in.tum.de"
-    @email_address4 = "raxml@h-its.org"
     send_email
     
-  end
-  ## send email to @email_addressesX, (Alexi,Simon,Denis)
-  def send_email
-    Net::SMTP.start(ENV['MAIL_SENDER'], 25) do |smtp|
-      smtp.open_message_stream("#{ENV['SERVER_NAME']}", @email_address4,@email_address1,@email_address3) do |f|
-        
-        f.puts "From: RAxMLWS.Contact"
-        
-        f.puts "To: #{@email_address}"
+  end  
 
-        f.puts "Subject: RAxML Webserver message: #{@subject}"
-        
-        f.puts "#{@name} (#{@email}) sent following message:\n #{@message}"
+  
+  def send_email
+    config_lines = File.open("/srv/rnr-srv/lib/email.conf", "r").readlines.map{ |line| line.chop }
+    from = config_lines[0]
+    password = config_lines[1]
+    
+
+#     email_config = ParseConfig.new("#{RAILS_ROOT}/lib/email.conf").params
+#     email_config = ParseConfig.new('/home/aberer/proj/srv/websrv/lib/email.conf').params
+#     from = email_config['from_address']
+    to = ["andre.aberer@googlemail.com"]
+#     password = email_config['password']
+    
+    to.each do | to_addr |
+      content =   <<EOF
+From: #{from}
+To: #{to_addr}
+subject: #{@subject}
+Date: #{Time.now.rfc2822}
+
+
+\"#{@name}\" with email address #{@email} just sent you a message. The content is: 
+#{@message}
+
+
+EOF
+      
+      Net::SMTP.enable_tls(OpenSSL::SSL::VERIFY_NONE)  
+      Net::SMTP.start('smtp.gmail.com', 587, 'gmail.com', from, password, :login) do |smtp| 
+        smtp.send_message(content, from, to)
       end
     end
-  end
+  end    
 end
 
 SendMessage.new(ARGV)

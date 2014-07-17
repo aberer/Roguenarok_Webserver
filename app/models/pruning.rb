@@ -1,6 +1,6 @@
 class Pruning < ActiveRecord::Base
   
-attr_accessor :jobid, :threshold, :user_def
+attr_accessor :jobid, :threshold, :user_def, :display_path
 
   HUMANIZED_ATTRIBUTES = {
     :jobid => "Job ID", :threshold => "Threshold", :user_def => "User defined value"
@@ -23,6 +23,41 @@ attr_accessor :jobid, :threshold, :user_def
       end
     end
   end
+  
+  
+  def getDisplayFileName 
+    numExcluded = "init"
+    pruneFile = File.join([RAILS_ROOT, "public", "jobs", self.jobid, "pruned_taxa"])
+    if File.exists?(pruneFile)
+      fh = File.open(pruneFile,"r")
+      num = fh.readlines.length 
+      if num == 0
+        numExcluded = "init" 
+      else
+        numExcluded = "pruned" + num.to_s
+      end
+      fh.close
+    end 
+
+    display_file_name = self.threshold.downcase + "." + numExcluded
+    display_file_name += "." + self.user_def.to_s if display_file_name.eql?("user")
+    
+    if File.directory?(self.display_path)
+      files = Dir.glob(self.display_path + "/" + display_file_name + "_*")
+      if files.length == 0
+        display_file_name += "_0"
+      else
+        nextNumber = files.map{|f| f.split("_")[1].to_i}.sort![-1] + 1 
+        display_file_name += "_" +  nextNumber.to_s
+      end
+    else
+      display_file_name += "_0"
+    end
+    display_file_name = self.display_path + "/" + display_file_name
+    
+    return display_file_name    
+  end
+
 
   def execute(link,prune_list)
     path                   = File.join(RAILS_ROOT,"public","jobs",self.jobid)
@@ -30,6 +65,7 @@ attr_accessor :jobid, :threshold, :user_def
     best_tree_file         = File.join(path, "best_tree")
     pruned_taxa_file       = File.join(path,"pruned_taxa")
     results_path           = File.join(path,"results")
+    self.display_path      = File.join(path,"display")
     current_tree_file      = File.join(path,"current_tree")
     logs_path              = File.join(path,"logs")
 
@@ -52,12 +88,8 @@ attr_accessor :jobid, :threshold, :user_def
         file.write("")
       else
         prune_list.each do |taxon|
-          taxon = taxon.sub(/^<del>/, '')
-          taxon = taxon.sub(/<\/del>$/,'')
-          t = Taxon.find(:first, :conditions => {:name => taxon, :roguenarok_id => r.id})
-          t.destroy
           file.write(taxon+"\n")
-        end
+        end        
       end
     }
 
@@ -69,7 +101,7 @@ attr_accessor :jobid, :threshold, :user_def
       "-w" => path}
 
     opts_raxml = {
-      "-z" => bootstrap_treeset_file, 
+      "-z" => pruned_bts_file , 
       "-n" => "#{self.jobid}_#{self.id}",
       "-m" => "GTRCAT",
       "-w" => path}
@@ -78,16 +110,19 @@ attr_accessor :jobid, :threshold, :user_def
     if self.threshold.eql?("mr")
       opts_raxml["-J"] = "MR"
     elsif self.threshold.eql?("mre")
-      otps_raxml["-J"] = "MRE"
-    elsif self.threshold.eql?("user")
-      opts_raxml["-J"] = "MR"
+      opts_raxml["-J"] = "MRE" 
+    elsif self.threshold.eql?("user")      
+      raise "expected a user-defined threshold" unless  self.user_def  != 1 
+      opts_raxml["-J"] = "T_"  + self.user_def.to_s 
     elsif self.threshold.eql?("strict")
       opts_raxml["-J"] = "STRICT"
     else # bipartitions
       opts_rnr_prune["-t"] = best_tree_file
       opts_raxml["-f"] = "b"
-      opts_raxml["t"] = best_tree_file
+      opts_raxml["-t"] = pruned_best_tree_file
     end
+    
+    display_file_name = getDisplayFileName
     
     job = Roguenarok.find(:first,:conditions => {:jobid => self.jobid})
     user = User.find(:first, :conditions => {:id => job.user_id})
@@ -95,25 +130,15 @@ attr_accessor :jobid, :threshold, :user_def
 
     # BUILD COMMAND SHELL FILE FOR QSUB
     shell_file = File.join(RAILS_ROOT,"public","jobs",self.jobid,"submit.sh")
-    prune = File.join(RAILS_ROOT,"bioprogs","roguenarok","rnr-prune")
-    raxml = File.join(RAILS_ROOT,"bioprogs","raxml","raxmlHPC-SSE3")
+    prune = File.join(RAILS_ROOT,"lib","rnr-prune")
+    raxml = File.join(RAILS_ROOT,"lib","raxmlHPC-SSE3")
 
-    command_create_results_folder = "mkdir #{results_path}"
-    if File.exists?(results_path) && File.directory?(results_path)
-      command_create_results_folder = ""
-    end
+    command_create_results_folder = "mkdir -p  #{results_path}"
+    command_create_display_folder = "mkdir -p #{display_path}"
     
-    command_create_logs_folder = "mkdir #{logs_path}"
-    if File.exists?(logs_path) && File.directory?(logs_path)
-      command_create_logs_folder = ""
-    end
-    
-    command_rnr_prune = File.join(RAILS_ROOT,"bioprogs","roguenarok","rnr-prune")
-
-    command_update_working_files_after_pruning = "cp #{pruned_bts_file } #{bootstrap_treeset_file}; cp #{pruned_best_tree_file } #{best_tree_file};"
-
-    command_raxml = File.join(RAILS_ROOT,"bioprogs","raxml","raxmlHPC-SSE3")
-
+    command_create_logs_folder = "mkdir -p  #{logs_path}"
+    command_rnr_prune = File.join(RAILS_ROOT,"lib","rnr-prune")
+    command_raxml = File.join(RAILS_ROOT,"lib","raxmlHPC-SSE3")
     command_update_working_files_after_raxml = "cp #{raxml_tree_file } #{current_tree_file}; cp #{raxml_best_tree_file } #{current_tree_file};"
 
     resultfiles_rnr = File.join(path,"RnR*")
@@ -122,26 +147,19 @@ attr_accessor :jobid, :threshold, :user_def
 
     logfiles = File.join(path,"submit.sh.*")
     current_logfile = File.join(path,"current.log")
-    command_save_log_files = "cp #{logfiles} #{current_logfile};mv #{logfiles} #{logs_path}"
+    command_save_log_files = "cp #{logfiles} #{current_logfile};mv #{logfiles} #{logs_path} ; cp #{current_tree_file} #{display_file_name}"
    
     opts_rnr_prune.each_key {|k| command_rnr_prune  = command_rnr_prune+" "+k+" #{opts_rnr_prune[k]} "}
-    opts_raxml.each_key {|k| command_raxml  = command_raxml+" "+k+" #{opts_raxml[k]} "}
-
-    command_send_email = ""
-    if !(email.nil? || email.empty?)
-      command_send_email = File.join(RAILS_ROOT,"bioprogs","ruby","send_email.rb")
-      command_send_email = command_send_email + " -e #{email} -l #{link}"
-    end
-
+    opts_raxml.each_key {|k| command_raxml  = command_raxml+" "+k+" #{opts_raxml[k]} "}    
+    
     File.open(shell_file,'wb'){|file| 
       file.write(command_create_results_folder+"\n")
+      file.write(command_create_display_folder+"\n")      
       file.write(command_create_logs_folder+"\n")
       file.write(command_rnr_prune+"\n")
-      file.write(command_update_working_files_after_pruning+"\n")
       file.write(command_raxml+"\n")
       file.write(command_update_working_files_after_raxml+"\n")
       file.write(command_save_result_files+"\n")
-      file.write(command_send_email+"\n")
       file.write("echo done!\n")
       file.write(command_save_log_files+"\n")
     }

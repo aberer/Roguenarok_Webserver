@@ -6,7 +6,21 @@ body {
     font-family: arial,sans-serif;
     font-size:0.9em;
     background-color:#ffffff;  
+
 }
+
+.image:hover
+{
+    opacity:0.4;
+    filter:alpha(opacity=40); 
+}
+
+.multiselect:hover
+{
+    opacity:0.4;
+    filter:alpha(opacity=40); 
+}
+
 
 /*Website Headline*/
 h1 {
@@ -30,7 +44,7 @@ h3 {
     margin-bottom: 0px;
 }
 
-ul {
+ul.nolist {
     list-style-type: none;
     padding:0px;
     margin-top:0px;
@@ -39,6 +53,10 @@ ul {
 a {
     text-decoration:none;
     color: #4a3d77;
+}
+
+label:hover {
+    color: #555555;
 }
 
 a:hover {
@@ -50,12 +68,14 @@ a:hover {
 #header {
     line-height: 76px;
     height: 85px;
-    background-image: url(/images/header.png);
+    background-image: url(../images/header.png);
 }
+
+
 
 #navigation {
     height:30px;
-    background-image: url(/images/navigation.png);
+    background-image: url(../images/navigation.png);
     line-height:22px;
 }
 
@@ -96,26 +116,53 @@ a:hover {
     font-size:0.9em;
 }
 
-#separator_top {
+*.separator_top {
     line-height:1px;
     margin-bottom:10px;
     width: 628px;
     vertical-align: bottom;
-    background: url(/images/separator.png) repeat-x;
+    background: url(../images/separator.png) repeat-x;
 }
 
-#separator_bottom {
+*.separator_small { 
     line-height:1px;
-    width: 628px;
-    margin-top:80px;
-    background: url(/images/separator.png) repeat-x;
+    margin-bottom:20px;
+    width: 450px;
+    vertical-align: bottom;
+    background: url(../images/separator.png) repeat-x;
+} 
+
+
+
+*.vertical
+{ 
+  background: url(../images/separator.png) repeat-y; 
+  background-repeat:repeat-y;  
 }
 
-#separator_short {
+
+
+
+
+*.separator_bottom {
+    line-height:11px;
+    height: 1px;
+    margin-bottom:20px;
+    background: url(../images/separator.png) repeat-x;
+}
+
+
+*.separator_bottom_slim {
+    line-height:1px;
+    height: 1px;
+    background: url(../images/separator.png) repeat-x;
+}
+
+*.separator_short {
     line-height:18px;
     width: 420px;
     vertical-align: bottom;
-    background: url(/images/separator.png) repeat-x;
+    background: url(../images/separator.png) repeat-x;
 }
 
 #footer {
@@ -144,6 +191,6 @@ a:hover {
     color: white ;
     background-color: #4a3d77;
     font-size:1.1em;
-    text-decoration:underline;
+    /* text-decoration:underline; */
  }
 
