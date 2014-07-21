@@ -11,9 +11,40 @@ class RogueTaxaAnalysis < ActiveRecord::Base
     HUMANIZED_ATTRIBUTES[attr.to_sym] || super
   end
 
+  def getName
+    # result = jobid.to_s
+    result = "rnr"
+    
+    if threshold.eql?( "user")
+      result += "_" + user_def.to_s      
+    else
+      
+      if(threshold.eql?("bipartitions"))
+        result += "_mle"
+      else
+        result += "_" + threshold.to_s
+      end
+    end
 
-  def validate
+    result += "_" + dropset.to_s
+    
+    if optimize.eql?("number_of_bipartitions")
+      result += "_bip"      
+    else
+      result += "_sup"
+    end
 
+    return result
+  end
+
+
+  def getFile 
+    file = File.join( RAILS_ROOT, "public", "jobs", self.jobid, "results", "RogueNaRok_droppedRogues.#{self.jobid}_#{self.id}")
+    return file 
+  end
+
+
+  def validate    
     # validate dropset, not nil, has to be an integer
     if self.dropset.nil? || self.dropset.empty? 
       self.errors.add(:dropset, "cannot be blank!")
@@ -42,8 +73,7 @@ class RogueTaxaAnalysis < ActiveRecord::Base
           self.errors.add(:user_def, "must be an integer greater than zero!")
         end
       end
-    end
-    
+    end 
   end
 
   def execute(link)
@@ -72,7 +102,7 @@ class RogueTaxaAnalysis < ActiveRecord::Base
     if self.threshold.eql?("mr")
       opts["-c"] = 50
     elsif self.threshold.eql?("mre")
-      otps["-c"] = "MRE"
+      opts["-c"] = "MRE"
     elsif self.threshold.eql?("user")
       opts["-c"] = self.user_def
     elsif self.threshold.eql?("strict")
@@ -97,7 +127,7 @@ class RogueTaxaAnalysis < ActiveRecord::Base
 
     # BUILD SHELL FILE FOR QSUB
 
-    shell_file = File.join(RAILS_ROOT,"public","jobs",self.jobid,"submit.sh")
+    shell_file = File.join( RAILS_ROOT, "public", "jobs", self.jobid, "submit.sh")
 
     command_create_results_folder = "mkdir -p #{results_path}"
     system command_create_results_folder
@@ -113,17 +143,10 @@ class RogueTaxaAnalysis < ActiveRecord::Base
     resultfiles = File.join(path,"RogueNaRok*")
     command_save_result_files="mv #{resultfiles} #{results_path}"
 
-    command_send_email = "";
-    if !(email.nil? || email.empty?)
-      command_send_email = File.join(RAILS_ROOT,"bioprogs","ruby","send_email.rb")
-      command_send_email = command_send_email + " -e #{email} -l #{link}"
-    end
-  
     File.open(shell_file,'wb'){|file| 
       file.write(command_change_directory+"\n")
       file.write(command_roguenarok+"\n")
       file.write(command_save_result_files+"\n")
-      file.write(command_send_email+"\n")
       file.write("echo done! > #{current_logfile}\n")
     }
 
@@ -131,4 +154,5 @@ class RogueTaxaAnalysis < ActiveRecord::Base
     qsub_command = "qsub -o #{log_out} -e #{log_err} #{shell_file}"
     system qsub_command
   end
+
 end

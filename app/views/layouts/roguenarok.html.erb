@@ -1,15 +1,18 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
-     "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 
-<html>
-  <title>Roguenarok</title>
-  <%= javascript_include_tag "application" %>
+<html >
+  <head>
+  <title>RogueNaRok</title>
+  <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.3.2/jquery.min.js" > </script>  
+  <%= javascript_include_tag 'application' %>  
   <%= stylesheet_link_tag 'roguenarok' %>
-  <style type="text/css"></style>
-  <body>
+
+  </head>
+  <body >
+
     <!--Header -->
     <div id="header">
-      <h1>Roguenarok</h1>
+      <h1>RogueNaRok</h1>
     </div>
 
     <!-- Navigation and Logo -->
@@ -27,7 +30,7 @@
         <%= link_to_unless_current "Contact", :action => 'contact'%>
       </div>
       <div id="nav_points">
-        <%= link_to_unless_current "About", :action => 'about'%>
+        <%= link_to_unless_current "Help", :action => 'about'%>
       </div>
       <div id="logo">
         <a href="http://www.exelixis-lab.org/", target="_blank">Exelixis Lab</a>
@@ -40,8 +43,63 @@
     </div>
 
     <div id="footer">
-      <p> &copy 2011 <a href="http://www.exelixis-lab.org/", target="_blank">Exelixis Lab</a> |  <%= link_to "Contact", :action => 'contact'%></p>
+      <center><p> &copy 2012 <a href="http://www.exelixis-lab.org/", target="_blank">Exelixis Lab</a> |  <%= link_to "Contact", :action => 'contact'%></p> </center>
     </div>
+    
+    <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.3.2/jquery.min.js" > </script>  
+    <%= javascript_include_tag 'jquery.qtip-1.0.0-rc3.min' %>  
+
+    <script type="text/javascript" >
+
+      $.fn.qtip.styles.abererStyle = {
+      border: { color: '#ff7e00' } ,
+      color: '#4A3D77',
+      background: '#FFD2A6',
+      tip: true ,
+      width: {max : 500}
+      }
       
-    </body>
+      
+      $('[type="help"]').qtip(
+      {
+      show: { effect: { type: 'fade' ,
+      length: 300} ,
+      delay: 300 },
+
+      position: { corner:  {
+      target: 'topMiddle',
+      tooltip: 'bottomLeft' }
+
+      },
+      style: 'abererStyle'
+      })
+
+      
+      
+      $('.help').qtip( 
+      {
+      show: { effect: { type: 'fade' ,
+      length: 300} ,
+      delay: 300 },
+      position: { corner:  {
+      target: 'topMiddle',
+      tooltip: 'bottomLeft' }
+      },
+      style: 'abererStyle'
+      } )
+
+      $('[omg="help"]').qtip( 
+      {
+      show: { effect: { type: 'fade' ,
+      length: 300} ,
+      delay: 300 },
+      position: { corner:  {
+      target: 'topMiddle',
+      tooltip: 'bottomLeft' }
+      },
+      style: 'abererStyle'
+      } )
+    </script>
+
+  </body>  
 </html>

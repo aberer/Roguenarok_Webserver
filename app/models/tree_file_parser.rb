@@ -36,7 +36,7 @@ attr_reader :format, :valid_format, :error ,:data
     f = File.open(file,'wb')
     @data.each {|d| f.write(d)}
     f.close
-    cmd = "java -jar #{RAILS_ROOT}/bioprogs/java/treecheck.jar #{file}"
+    cmd = "java -jar #{RAILS_ROOT}/lib/treecheck.jar #{file}"
     # let treecheck.jar check if newick format is correct
     PTY.spawn(cmd) do |stdin, stdout, pid| 
       
@@ -57,7 +57,7 @@ attr_reader :format, :valid_format, :error ,:data
   public 
   def buildTaxaFile(jobid, treefile_on_disk)
     outfile = "#{RAILS_ROOT}/public/jobs/#{jobid}/taxa_file"
-    cmd = "java -jar #{RAILS_ROOT}/bioprogs/java/extract_tree_taxa.jar #{treefile_on_disk} #{outfile}"
+    cmd = "java -jar #{RAILS_ROOT}/lib/extract_tree_taxa.jar #{treefile_on_disk} #{outfile}"
     PTY.spawn(cmd) do |stdin, stdout, pid| 
       
       stdin.each do  |line| 

@@ -6,14 +6,28 @@ body {
     font-family: arial,sans-serif;
     font-size:0.9em;
     background-color:#ffffff;  
+
 }
+
+.image:hover
+{
+    opacity:0.4;
+    filter:alpha(opacity=40); 
+}
+
+.multiselect:hover
+{
+    opacity:0.4;
+    filter:alpha(opacity=40); 
+}
+
 
 /*Website Headline*/
 h1 {
     font-size: 2.0em;
     font-weight: 600;
     color: #4a3d77;
-    font-stretch: expanded;
+/*    font-stretch: expanded;*/
 }
 
 /*Section Headlines*/
@@ -30,7 +44,7 @@ h3 {
     margin-bottom: 0px;
 }
 
-ul {
+ul.nolist {
     list-style-type: none;
     padding:0px;
     margin-top:0px;
@@ -39,6 +53,10 @@ ul {
 a {
     text-decoration:none;
     color: #4a3d77;
+}
+
+label:hover {
+    color: #555555;
 }
 
 a:hover {
@@ -52,6 +70,8 @@ a:hover {
     height: 85px;
     background-image: url(../images/header.png);
 }
+
+
 
 #navigation {
     height:30px;
@@ -83,7 +103,7 @@ a:hover {
 #logo {
     padding-right: 30px;
     text-align:right;
-    width:195;
+    width:195px;
     font-size:13px;
     color: #ffffff;
     float:none; 
@@ -96,7 +116,7 @@ a:hover {
     font-size:0.9em;
 }
 
-#separator_top {
+*.separator_top {
     line-height:1px;
     margin-bottom:10px;
     width: 628px;
@@ -104,14 +124,35 @@ a:hover {
     background: url(../images/separator.png) repeat-x;
 }
 
-#separator_bottom {
+*.separator_small { 
     line-height:1px;
-    width: 628px;
-    margin-top:80px;
+    margin-bottom:20px;
+    width: 450px;
+    vertical-align: bottom;
+    background: url(../images/separator.png) repeat-x;
+} 
+
+*.vertical
+{ 
+  background: url(../images/separator.png) repeat-y; 
+  background-repeat:repeat-y;  
+}
+
+*.separator_bottom {
+    line-height:11px;
+    height: 1px;
+    margin-bottom:20px;
     background: url(../images/separator.png) repeat-x;
 }
 
-#separator_short {
+
+*.separator_bottom_slim {
+    line-height:1px;
+    height: 1px;
+    background: url(../images/separator.png) repeat-x;
+}
+
+*.separator_short {
     line-height:18px;
     width: 420px;
     vertical-align: bottom;
@@ -144,6 +185,5 @@ a:hover {
     color: white ;
     background-color: #4a3d77;
     font-size:1.1em;
-    text-decoration:underline;
- }
-
+    /* text-decoration:underline; */
+}

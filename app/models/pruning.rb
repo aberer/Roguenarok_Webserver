@@ -1,6 +1,6 @@
 class Pruning < ActiveRecord::Base
   
-attr_accessor :jobid, :threshold, :user_def
+attr_accessor :jobid, :threshold, :user_def, :display_path
 
   HUMANIZED_ATTRIBUTES = {
     :jobid => "Job ID", :threshold => "Threshold", :user_def => "User defined value"
@@ -23,17 +23,53 @@ attr_accessor :jobid, :threshold, :user_def
       end
     end
   end
+  
+  
+  def getDisplayFileName 
+    numExcluded = "init"
+    pruneFile = File.join([RAILS_ROOT, "public", "jobs", self.jobid, "pruned_taxa"])
+    if File.exists?(pruneFile)
+      fh = File.open(pruneFile,"r")
+      num = fh.readlines.length 
+      if num == 0
+        numExcluded = "init" 
+      else
+        numExcluded = "pruned" + num.to_s
+      end
+      fh.close
+    end 
+
+    display_file_name = self.threshold.downcase + "." + numExcluded
+    display_file_name += "." + self.user_def.to_s if display_file_name.eql?("user")
+    
+    if File.directory?(self.display_path)
+      files = Dir.glob(self.display_path + "/" + display_file_name + "_*")
+      if files.length == 0
+        display_file_name += "_0"
+      else
+        nextNumber = files.map{|f| f.split("_")[1].to_i}.sort![-1] + 1 
+        display_file_name += "_" +  nextNumber.to_s
+      end
+    else
+      display_file_name += "_0"
+    end
+    display_file_name = self.display_path + "/" + display_file_name
+    
+    return display_file_name    
+  end
+
 
   def execute(link,prune_list)
-    path                   = File.join(RAILS_ROOT,"public","jobs",self.jobid)
-    bootstrap_treeset_file = File.join(path, "bootstrap_treeset_file")
-    best_tree_file         = File.join(path, "best_tree")
-    pruned_taxa_file       = File.join(path,"pruned_taxa")
-    results_path           = File.join(path,"results")
-    current_tree_file      = File.join(path,"current_tree")
-    logs_path              = File.join(path,"logs")
-    log_out                = File.join(logs_path,"submit.sh.out")
-    log_err                = File.join(logs_path,"submit.sh.err")
+    path                   = File.join( RAILS_ROOT, "public", "jobs", self.jobid)
+    bootstrap_treeset_file = File.join( path, "bootstrap_treeset_file")
+    best_tree_file         = File.join( path, "best_tree")
+    pruned_taxa_file       = File.join( path, "pruned_taxa")
+    results_path           = File.join( path, "results")
+    self.display_path      = File.join( path, "display")
+    current_tree_file      = File.join( path, "current_tree")
+    logs_path              = File.join( path, "logs")
+    log_out                = File.join( logs_path, "submit.sh.out")
+    log_err                = File.join( logs_path, "submit.sh.err")
 
     current_logfile = File.join(path,"current.log")
     if File.exists?(current_logfile) 
@@ -54,10 +90,6 @@ attr_accessor :jobid, :threshold, :user_def
         file.write("")
       else
         prune_list.each do |taxon|
-          taxon = taxon.sub(/^<del>/, '')
-          taxon = taxon.sub(/<\/del>$/,'')
-          t = Taxon.find(:first, :conditions => {:name => taxon, :roguenarok_id => r.id})
-          t.destroy
           file.write(taxon+"\n")
         end
       end
@@ -71,7 +103,7 @@ attr_accessor :jobid, :threshold, :user_def
       "-w" => path}
 
     opts_raxml = {
-      "-z" => bootstrap_treeset_file, 
+      "-z" => pruned_bts_file , 
       "-n" => "#{self.jobid}_#{self.id}",
       "-m" => "GTRCAT",
       "-w" => path}
@@ -80,16 +112,19 @@ attr_accessor :jobid, :threshold, :user_def
     if self.threshold.eql?("mr")
       opts_raxml["-J"] = "MR"
     elsif self.threshold.eql?("mre")
-      opts_raxml["-J"] = "MRE"
-    elsif self.threshold.eql?("user")
-      opts_raxml["-J"] = "MR"
+      opts_raxml["-J"] = "MRE" 
+    elsif self.threshold.eql?("user")      
+      raise "expected a user-defined threshold" unless  self.user_def  != 1 
+      opts_raxml["-J"] = "T_"  + self.user_def.to_s 
     elsif self.threshold.eql?("strict")
       opts_raxml["-J"] = "STRICT"
     else # bipartitions
       opts_rnr_prune["-t"] = best_tree_file
       opts_raxml["-f"] = "b"
-      opts_raxml["t"] = best_tree_file
+      opts_raxml["-t"] = pruned_best_tree_file
     end
+    
+    display_file_name = getDisplayFileName
     
     job = Roguenarok.find(:first,:conditions => {:jobid => self.jobid})
     user = User.find(:first, :conditions => {:id => job.user_id})
@@ -106,6 +141,9 @@ attr_accessor :jobid, :threshold, :user_def
     command_create_logs_folder = "mkdir -p #{logs_path}"
     system command_create_logs_folder
     
+    command_create_display_folder = "mkdir -p #{display_path}"
+		system command_create_display_folder
+		
     command_change_directory = "cd #{path}"
 
     command_rnr_prune = File.join(RAILS_ROOT,"bioprogs","roguenarok","rnr-prune")
@@ -123,12 +161,6 @@ attr_accessor :jobid, :threshold, :user_def
     opts_rnr_prune.each_key {|k| command_rnr_prune  = command_rnr_prune+" "+k+" #{opts_rnr_prune[k]} "}
     opts_raxml.each_key {|k| command_raxml  = command_raxml+" "+k+" #{opts_raxml[k]} "}
 
-    command_send_email = ""
-    if !(email.nil? || email.empty?)
-      command_send_email = File.join(RAILS_ROOT,"bioprogs","ruby","send_email.rb")
-      command_send_email = command_send_email + " -e #{email} -l #{link}"
-    end
-
     File.open(shell_file,'wb'){|file| 
       file.write(command_change_directory+"\n")
       file.write(command_rnr_prune+"\n")
@@ -136,7 +168,6 @@ attr_accessor :jobid, :threshold, :user_def
       file.write(command_raxml+"\n")
       file.write(command_update_working_files_after_raxml+"\n")
       file.write(command_save_result_files+"\n")
-      file.write(command_send_email+"\n")
       file.write("echo done! > #{current_logfile}\n")
     }
 

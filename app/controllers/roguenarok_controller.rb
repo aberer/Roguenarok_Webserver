@@ -1,5 +1,12 @@
+require 'digest/md5'
+require 'fileutils'
+require 'enumerator'
+
 class RoguenarokController < ApplicationController
   
+  @fileName = nil
+  @jobName = nil
+
   def index
     @job = Roguenarok.new
     @user = User.new
@@ -50,25 +57,19 @@ class RoguenarokController < ApplicationController
     if ip.eql?("") || ip.nil?
       ip = "xxx.xxx.xxx.xxx"
     end
+    @user;
     if User.exists?(:ip => ip)
       @user = User.find(:first, :conditions => {:ip => ip})
-   #   #If this user has not used an email address in the past, save it
-   #   if @user.email.eql?("")
-   #     @user.update_attributes(:email => email)
-   #   end
-
-      ### Correction:
-      # always update email address
       @user.update_attributes(:email => email)
     else
       @user = User.new({:email => email, :ip => ip, :saved_subs => 0, :all_subs => 0})
-      @user.save
-      
+      @user.save      
     end
-    #################
-    ### save job data & update user submission counter if everything is allright
 
-    @job = Roguenarok.new({:jobid => jobid, :user_id => @user.id, :description => description, :bootstrap_tree_set => bootstrap_treeset_file, :tree => best_known_tree_file, :excluded_taxa => taxa_to_exclude_file})
+    #################
+    ### save job data & update user submission counter if everything is alright
+
+    @job = Roguenarok.new({:jobid => jobid, :user_id => @user.id, :description => description, :bootstrap_tree_set => bootstrap_treeset_file, :tree => best_known_tree_file , :excluded_taxa => taxa_to_exclude_file})  
     buildJobDir(jobid)
     if @job.valid?  && @user.errors.size < 1
       @job.save
@@ -84,20 +85,29 @@ class RoguenarokController < ApplicationController
         user_counter.save
       end
 
-      # save taxa
+      dummySearch = Search.new({:jobid => jobid, :name => "dummy" , :filename => ""  })
+      dummySearch.save 
       taxa = File.open(@job.taxa_file, 'rb').readlines
-      taxa.each do |t|
-        taxon = Taxon.new({:roguenarok_id => @job.id, :name => t.chomp!})
+
+      taxa.sort! {|x,y| x <=> y} 
+
+      cnt = 1 
+      taxa.each do |t|        
+        logger.warn "\njobid is " + jobid
+        taxon = Taxon.new({:roguenarok_id => jobid, :name => t.chomp!, :search_id => dummySearch.id, :pos => cnt})
+        cnt += 1 
         taxon.save
       end
+
+      @fileName = nil
+      @jobName = nil
       
-      if !taxa_to_exclude_file.nil? && !taxa_to_exclude_file.eql?("")
+      if !taxa_to_exclude_file.nil?  && !taxa_to_exclude_file.eql?("")
         ex_taxa = File.open(@job.excluded_taxa, 'rb').readlines
-        @job.excludeTaxa(ex_taxa)
+        @job.excludeTaxa(jobid, ex_taxa)
       end
       redirect_to :action => 'work', :jobid => jobid 
     else
-
       destroyJobDir(jobid)
       @job.errors.each do |field,error|
         puts field
@@ -108,8 +118,152 @@ class RoguenarokController < ApplicationController
         puts field
         puts error
       end
-      render :action => 'submit'
+      render  :action => 'submit'
+    end 
+  end
+
+  def annotatePhyFile(phyFile, namefile)
+    names = File.open(namefile).readlines.map{|name| name.chomp!}.reverse
+    fh = File.open(phyFile, "r")
+    content = fh.readline
+    fh.close
+    
+    pattern = /(<phyloge[^>]+>)/
+    indices = content.enum_for(:scan, pattern).map {Regexp.last_match.end(0)}.reverse
+    
+    i = 0
+    raise "not enough names available!" unless indices.length == names.length 
+    indices.each do  |index|
+      content = content.insert(index, "<name>#{names[i]}</name>")
+      i += 1
     end
+
+    # puts content
+    fh = File.open(phyFile, "w")
+    fh.write(content)
+    fh.close
+  end
+
+  
+  def deleteSuperfluousFiles(path)
+    files = Dir.glob(File.join(path,"*"))
+
+    fileHash = {}
+    files.each do |file|    
+      digest = Digest::MD5.hexdigest(File.read(file))
+      
+      if ! fileHash.has_key?(digest)
+        fileHash[digest] = file
+      else
+        
+        otherFile = fileHash[digest]
+        
+        # delete older file 
+        endingOther = otherFile.split("_")[-1].to_i
+        endingHere = file.split("_")[-1].to_i
+
+        if endingOther > endingHere
+          FileUtils.rm_rf(file) 
+        else
+          FileUtils.rm_rf(otherFile)
+          fileHash[digest] = file
+        end 
+      end
+    end  
+  end
+  
+  def getIdFromButton(params)    
+    theSearch = params.keys.select{ |k| k =~ /[\._]x/}[0]
+    myMatch = theSearch.match(/.+@([0-9]+).[xy]/)
+    
+    raise "Your browser submits data differently than expected. Please report the browser version you encountered this problem with." if myMatch.nil?
+    theSearch = myMatch[1].to_i
+    return theSearch
+  end
+
+  def initializeTreeViewer(params)
+    result = ""
+    @jobid = params[:jobid]
+    
+    if params.has_key?("display")
+      jobPath = File.join( RAILS_ROOT, "public", "jobs", @jobid)
+
+      # remove duplicate file 
+      deleteSuperfluousFiles( File.join( jobPath, "display") )
+      
+      # concatenate all trees  
+      command = "cat $(ls -tr #{jobPath}/display/*) | head -n 10  > #{jobPath}/display_tree ;\
+ls -tr #{jobPath}/display/ > #{jobPath}/phyloNames"
+      system command  
+      
+      system "cp #{RAILS_ROOT}/public/config_file #{jobPath}" 
+      
+      system "rm -f #{jobPath}/display_tree.xml ; \
+java -cp #{RAILS_ROOT}/lib/forester.jar  org.forester.application.phyloxml_converter -f=nn #{jobPath}/display_tree  #{jobPath}/display_tree.xml"
+      
+      confFileHandle = File.open("#{jobPath}/config_file", "a")
+      id = 1
+
+      command = "tr -d '\n' < #{jobPath}/display_tree.xml |  sed 's/>[ ]*</></g'   > #{jobPath}/tmp ; mv #{jobPath}/tmp #{jobPath}/display_tree.xml"
+      system command 
+
+      annotatePhyFile(File.join(jobPath,"display_tree.xml"),File.join(jobPath,"phyloNames"))
+      
+      if File.exists?(jobPath + "pruned_taxa")
+        pruned_taxa =  File.open(File.join(jobPath, "pruned_taxa")).readlines
+
+        pruned_taxa.each do |taxon| 
+          taxon.chomp!
+          
+          tmp = id.to_s.rjust(8, "0")
+          confFileHandle.write("species_color: #{tmp} 0xFF0000\n")          
+
+          command =  "sed 's/\\(<name>#{taxon}<\\/name><branch_length>[0-9\\.]*<\\/branch_length>\\)/\\1<taxonomy><code>#{tmp}<\\/code><\\/taxonomy>/g' #{jobPath}/display_tree.xml > #{jobPath}/tmp ;\
+ mv #{jobPath}/tmp #{jobPath}/display_tree.xml" 
+          system command 
+          command =  "sed 's/\\(<name>#{taxon}<\\/name>\\)\\(<[^b][^r][^a]\\)/\\1<taxonomy><code>#{tmp}<\\/code><\\/taxonomy>\\2/g' #{jobPath}/display_tree.xml > #{jobPath}/tmp ;\
+ mv #{jobPath}/tmp #{jobPath}/display_tree.xml" 
+          system command 
+          
+          id += 1 
+        end
+        
+        # @curTreeInfo = calculateRbic(File.join(["#{jobPath}", "current_tree"]), 
+        #                              pruned_taxa.length,
+        #                              File.open("#{jobPath}/taxa_file", "r").readlines.length
+        #                              )
+
+      end
+      confFileHandle.close()
+
+#       tree_file = "http://#{ENV['SERVER_IP']}:8080/rnr/jobs/#{@jobid}/display_tree.xml"      
+#       config_file = "http://#{ENV['SERVER_IP']}:8080/rnr/jobs/#{@jobid}/config_file"
+
+#       tree_file = "http://#{ENV['SERVER_IP']}/rnr/jobs/#{@jobid}/display_tree.xml"      
+#       config_file = "http://#{ENV['SERVER_IP']}/rnr/jobs/#{@jobid}/config_file"
+
+      tree_file = "http://rnr.h-its.org/rnr/jobs/#{@jobid}/display_tree.xml"      
+      config_file = "http://rnr.h-its.org/rnr/jobs/#{@jobid}/config_file"
+
+#       file = File.open("/rnr/jobs/#{@jobid}/display_tree.xml", "w")
+
+      fileA = File.join(["#{jobPath}", "display_tree.xml"])
+      fileB = File.join(["#{jobPath}", "config_file"])
+      
+      File.chmod(0755, fileA ) 
+      File.chmod(0755, fileB ) 
+      File.chmod(0755, "#{jobPath}")
+#       file = File.new("/rnr/jobs/#{@jobid}/config_file", "w")
+#       File.chmod(0755, "/rnr/jobs/#{@jobid}/config_file")
+
+#       File.chmod(755, tree_file)
+#       File.chmod(755, config_file)
+      
+      # call tree viewer  
+      result = "\n<SCRIPT> $(document).ready(function(){openWin('#{tree_file}','#{config_file}');});</SCRIPT>\n"
+    end 
+
+    return result
   end
 
   #######################################################################
@@ -117,59 +271,72 @@ class RoguenarokController < ApplicationController
 
   def work
     @jobid = params[:jobid]
-    job_path = File.join(RAILS_ROOT,"public","jobs",@jobid)
-    path     = File.join(job_path,"results")
-    ### get result files
-    @files = []
-    @names = []
-    if File.exists?(path) && File.directory?(path)
-      r = ResultFilesParser.new(path)
-      @names = r.names
-      @filenames = r.filenames
-    end
 
-    #### CHECK WHICH SUBMISSION HAS TO BE PERFORMED
-    
+    path = File.join(RAILS_ROOT,"public","jobs",@jobid,"results")
+    job_path =  File.join(RAILS_ROOT,"public","jobs",@jobid)
+
+    #### CHECK WHICH SUBMISSION HAS TO BE PERFORMED    
     jobtype = params[:jobtype]
-    @job = RogueTaxaAnalysis.new
-
+    @job = nil    
+    
+    @loadTreeViewer = initializeTreeViewer(params)
+    
     ### Taxa Analysis
-    if jobtype.eql?("analysis")
-      ### Rogue Taxa Analysis
-      if params[:taxa_analysis].eql?("Rogue Taxa Analysis")
-        tmp = rogueTaxaAnalysis(params)
-        if tmp.nil? 
+    case jobtype 
+    when "analysis"
+      updateCheckedTaxa(@jobid, [])
+      
+      tmp = rogueTaxaAnalysis(params) if params[:taxa_analysis].eql?("RogueNaRok" )
+      tmp = lsiAnalysis(params) if params[:taxa_analysis].eql?("leaf stability index" )
+      tmp = tiiAnalysis(params) if params[:taxa_analysis].eql?("taxonomic instability index" )
+      
+      if tmp.class == Hash
+        currentJob = Roguenarok.find(:first, :conditions => {:jobid => @jobid})
+        currentJob.update_attribute(:searchname,  tmp[:jobName])
+        currentJob.update_attribute(:filetoparse, tmp[:fileName])
+        
+        if tmp.has_key?(:mode)  # for lsi 
+          currentJob.update_attribute(:modes, tmp[:mode].join(",")) 
           redirect_to :action => 'wait', :jobid => @jobid
         else
-          @job = tmp
-        end
-      ### LSI Analysis
-      elsif params[:taxa_analysis].eql?("LSI")
-        tmp = lsiAnalysis(params)
-        if tmp.nil? 
           redirect_to :action => 'wait', :jobid => @jobid
-        else
-          @job = tmp
         end
-      ### TII Analysis
-      elsif params[:taxa_analysis].eql?("TII")
-        tmp = tiiAnalysis(params)
-        if tmp.nil? 
-          redirect_to :action => 'wait', :jobid => @jobid
-        else
-          @job = tmp
-        end
-      end 
-    ### Include Taxa
-    elsif jobtype.eql?("include")
+      else        
+        @job = tmp 
+      end
+
+    when "include"
+      updateCheckedTaxa(@jobid, [])
       includeTaxa(params)
-    ### Tree Manipulation
-    elsif jobtype.eql?("treeManipulation")
-      ### Exclude Taxa
-      if params[:tree_manipulation].eql?("Exclude Selected Taxa")
+    when "treeManipulation" 
+      updateCheckedTaxa(@jobid, []) if params.keys.any?{|k| k =~ /saveSearch/ || k =~ /deleteSearch/ || k =~ /sortSearch/}
+      job = Roguenarok.find(:first, :conditions => {:jobid => @jobid})
+      
+      if params.keys.any? { |k| k =~ /saveSearch/ } 
+        theSearch = getIdFromButton(params) 
+        s = Search.find(:first, :conditions => {:id => theSearch})
+        send_file s.filename
+      end 
+      
+      if params.keys.any? { |k| k =~ /sortSearch@dummy/ }
+        s = Search.find(:first, :conditions => {:jobid => @jobid, :name => "dummy"})
+
+        job.update_attribute(:sortedby, s.id )         
+      elsif params.keys.any?{|k| k=~ /sortSearch/}
+        theSearch = getIdFromButton(params)
+        job.update_attribute(:sortedby,  theSearch) 
+      end
+      
+      if params.keys.any?{ |k| k =~ /deleteSearch/ }
+        theSearch = getIdFromButton(params)
+        deleteSearch(theSearch)
+        s = Search.find(:last, :conditions => {:jobid => @jobid})
+        job.update_attribute(:sortedby, s.id)
+      end
+
+      if params[:tree_manipulation].eql?("Ignore Selected Taxa")
         excludeTaxa(params)
-      ### Prune Taxa
-      elsif params[:tree_manipulation].eql?("Prune Selected Taxa")
+      elsif params[:tree_manipulation].eql?("Prune Taxa / Visualize") &&  ! params.keys.any?{|k| k =~ /saveSearch/ || k =~ /deleteSearch/ || k =~ /sortSearch/}
         tmp = prune(params)
         if tmp.nil? 
           redirect_to :action => 'wait', :jobid => @jobid
@@ -179,8 +346,20 @@ class RoguenarokController < ApplicationController
       end
     end
 
-    
     #### INITIALIZE VARIABLES FOR THE FORM. KEEP OLD SELECTIONS WHEN AN ERROR OCCURRED.
+    job = Roguenarok.find(:first, :conditions => {:jobid => @jobid })
+
+    ### Initialize Job Description
+    @description = job.description
+    if @description.nil? || @description.empty?
+      @description = "none"
+    end
+    
+    currentSearchName = ""
+    if ! job.nil? && ! job.sortedby.nil?
+      s = Search.find(:first, :conditions => {:id => job.sortedby} )
+      currentSearchName = s.name 
+    end
 
     threshold = params[:threshold]
     @strict = false
@@ -189,94 +368,74 @@ class RoguenarokController < ApplicationController
     @user_def = false
     @user_def_value = nil
     @bipartitions = false
-    @best_tree_available = !File.exists?(File.join(RAILS_ROOT, "public", "jobs", @jobid, "best_tree"))
-  
-    ### Initialize Job Description
-    job = Roguenarok.find(:first, :conditions => ["jobid = #{@jobid}"])
-    @description = job.description
-    if @description.nil? || @description.empty?
-      @description = "none"
-    end
+    @best_tree_available = !File.exists?( File.join( RAILS_ROOT, "public", "jobs", @jobid, "best_tree"))
 
     ### Initialize Threshold Selection
-    if threshold.eql?('mr')
+    if currentSearchName.eql?("") || currentSearchName =~ /_mr_/
       @mr = true
-    elsif threshold.eql?('mre')
-      @mre = true
-    elsif threshold.eql?('user') 
-      @user_def = true
-      @user_def_value = params[:threshold_user_defined]
-    elsif threshold.eql?('bipartitions')
-      @bipartitions = true
-    else # set strict as default
+    elsif currentSearchName =~ /_strict_/
       @strict = true
-    end
+    elsif m = /rnr_(\d+)_/.match(currentSearchName)
+      @user_def = true
+      @user_def_value = m[1]
+    elsif currentSearchName =~ /_mre_/
+      @mre = true
+    elsif  currentSearchName =~ /_mle_/
+      @bipartitions = true  
+    else
+      @mr = true
+    end    
 
     ### Initialize Optimization Selection
-    optimize = params[:optimize]
-    @support = false
-    @numb_bipart = false
-    if optimize.eql?("number_of_bipartitions")
-      @numb_bipart = true
-    else # support is default
-      @support = true
-    end
-      
 
+    @support = false
+    @numb_bipart = false  
+    
+    if params.has_key?(:optimize)
+      @numb_bipart = true if  params[:optimize].eql?("number_of_bipartitions")
+    elsif  currentSearchName =~ /bip$/
+        @numb_bipart = true 
+    else
+      @support = true 
+    end
+    
     ### Initialize dropset value
-    @dropset = params[:dropset]
-    if @dropset.nil? || @dropset.empty?
-      @dropset = 1
+    if params.has_key?(:dropset)      
+      @dropset = params[:dropset]
+    elsif  currentSearchName =~ /rnr_/
+      @dropset = currentSearchName.split("_")[2].to_i
+    else
+      @dropset = 1 
     end
 
     ### Initialize excluded taxa 
     @ex_taxa = []
-    @ex_cols = 0
-    @ex_rows = 0
-    ex_taxa = Taxon.find(:all, :conditions => { :roguenarok_id => "#{job.id}", :excluded => "T"})
-    col = 0
-    row = 0
+
+    search = Search.find(:first, :conditions => {:jobid => @jobid}) 
+    ex_taxa = Taxon.find(:all, :conditions => { :roguenarok_id => @jobid , :search_id => search.id , :excluded => "T"})
     
     ### Initialize current tree
     @current_tree = nil
     if File.exists?(File.join(job_path,"current_tree"))
       @current_tree = File.open(File.join(job_path,"current_tree"),'r').readlines.join
+      
+      @curTreeInfo = calculateRbic(File.join(["#{job_path}", "current_tree"]), 
+                                   File.open("#{job_path}/pruned_taxa", "r").readlines.length, 
+                                   File.open("#{job_path}/taxa_file", "r").readlines.length
+                                   )
     end
 
-    # Generate a dynamically growing table with a maximum of 5 columns
-    for i in 0..ex_taxa.size-1
-      if @ex_taxa[col].nil?
-        @ex_taxa[col] = []
-      end
-      @ex_taxa[col].push(ex_taxa[i])
-      row = row+1
-      if @ex_taxa[col].size > 10
-      col = col+1
-        if @ex_taxa[col].nil?
-         row = 0
-        else
-          row = @ex_taxa[col].size
-        end
-      end
-     if col > 4
-        col = 0
-        row = @ex_taxa[0].size
-      end
-        
-    end
-    if @ex_taxa.size > 0
-      @ex_cols = @ex_taxa.size
-      @ex_rows = @ex_taxa[0].size
-    else
-      @ex_cols = 0
-      @ex_rows = 0
+    # generate table of excluded taxa 
+    @ex_taxa = []
+    ex_taxa.each do |t|
+      @ex_taxa.push(t)
     end
     
     ### Initialize Taxa Analysis Options
     @taxa_analysis_options = "";
-    roguenarok = "Rogue Taxa Analysis"
-    lsi        = "LSI"
-    tii        = "TII"
+    roguenarok = "RogueNaRok"
+    lsi        = "leaf stability index"
+    tii        = "taxonomic instability index"
 
     rougenarok_option = "<option>#{roguenarok}</option>"
     lsi_option        = "<option>#{lsi}</option>"
@@ -293,40 +452,60 @@ class RoguenarokController < ApplicationController
 
     ### Initialize Tree Manipulation Options
     @tree_manipulation_options = "";
-    exclude_taxa = "Exclude Selected Taxa"
-    prune_taxa = "Prune Selected Taxa"
+    exclude_taxa = "Ignore Selected Taxa"
+    prune_taxa = "Prune Taxa / Visualize"
+    
     exclude_taxa_option =  "<option>#{exclude_taxa}</option>"
     prune_taxa_option = "<option>#{prune_taxa}</option>"
-    if params[:tree_manipulation].eql?(exclude_taxa)
+
+    job = Roguenarok.find(:first, :conditions => {:jobid => @jobid})    
+    @isPruning = job.ispruning
+
+    if ! @isPruning
       exclude_taxa_option = "<option selected=\"selected\">#{exclude_taxa}</option>"
-    elsif params[:tree_manipulation].eql?(prune_taxa)
+    else
       prune_taxa_option = "<option selected=\"selected\">#{prune_taxa}</option>"
     end
+
     @tree_manipulation_options = exclude_taxa_option+prune_taxa_option
     
-    ### Initialize Taxa Listing 
-    taxa = Taxon.find(:all, :conditions => ["roguenarok_id = #{job.id}"])
-    @taxa = taxaToTable(taxa)
+    ### Initialize Taxa Listing     
+    prepareForTaxaTable(@jobid) 
+    
   end
-  
+
+
+  def updateCheckedTaxa(jobid, list)         
+    s = Search.find(:first, :conditions => {:jobid => jobid, :name => "dummy" })    
+    taxa = Taxon.find(:all, :conditions => {:search_id => s.id})    
+    taxa.each do |t| 
+      t.update_attribute(:isChecked, list.include?(t.name ))
+    end 
+  end
+
+
+
   def rogueTaxaAnalysis(params)
     ### Collect parameters for Rogue Taxa Analysis and try to save them
     jobid = params[:jobid]
     threshold = params[:threshold]
     user_def = 1
-    if threshold.eql?("user")
-      user_def = params[:threshold_user_defined]
-    end
-    optimize = params[:support]
+    user_def = params[:threshold_user_defined] if threshold.eql?("user")
+
+    optimize = params[:optimize]
     dropset = params[:dropset]
     job = RogueTaxaAnalysis.new({:jobid => jobid, :threshold => threshold, :user_def => user_def, :optimize => optimize, :dropset => dropset})
-    
+
     ### If the input parameters have passed the validation, execute and return true
     if job.valid?
       job.save
-      link = url_for :controller => 'roguenarork', :action => 'work', :id => jobid
+      name = job.getName
+      file = job.getFile
+
+      link = url_for :controller => 'roguenarok', :action => 'work', :id => jobid
+
       job.execute(link)
-      return nil
+      return {:fileName => file, :jobName => name}
     else
       job.errors.each do |field,error|
         puts field
@@ -335,7 +514,7 @@ class RoguenarokController < ApplicationController
       return job
     end
   end
-  
+
   def includeTaxa(params)
     job = Roguenarok.find(:first, :conditions => {:jobid => params[:jobid]})
     list = []
@@ -348,11 +527,12 @@ class RoguenarokController < ApplicationController
         end
       end
     end
-    job.includeTaxa(list)
+    job.includeTaxa(params[:jobid], list)
   end
 
   def excludeTaxa(params)
     job = Roguenarok.find(:first, :conditions => {:jobid => params[:jobid]})
+    job.update_attribute(:ispruning, false)
     list = []
     if !params[:taxa].nil?
       params[:taxa].each do |box|
@@ -363,23 +543,33 @@ class RoguenarokController < ApplicationController
         end
       end
     end
-    job.excludeTaxa(list)
+    job.excludeTaxa(params[:jobid],list)
   end
 
-  def prune(params)
-     ### Collect parameters for pruning and try to save them
+  def deleteSearch(id)
+    s = Search.find(:first, :conditions => {:id => id})
+    Taxon.delete_all("search_id = #{s.id}") 
+    s.delete    
+  end
+
+  def prune(params)   
+    ### Collect parameters for pruning and try to save them
     jobid = params[:jobid]
     threshold = params[:threshold_prune]
+
+    r = Roguenarok.find(:first, :conditions => {:jobid => jobid})
+    r.update_attribute(:ispruning, true)
+
     user_def = 1
     if threshold.eql?("user")
       user_def = params[:threshold_prune_user_defined]
     end
     job = Pruning.new({:jobid => jobid, :threshold => threshold, :user_def => user_def})
-    
+
     ### If the input parameters have passed the validation, execute and return true
     if job.valid?
       job.save
-      link = url_for :controller => 'roguenarork', :action => 'work', :id => jobid
+      link = url_for :controller => 'roguenarok', :action => 'work', :id => jobid
 
       # collect taxa that have been selected
       list = []
@@ -393,7 +583,9 @@ class RoguenarokController < ApplicationController
         end
       end
 
+      updateCheckedTaxa(jobid, list) 
       job.execute(link,list)
+      r.update_attribute(:display_path, job.getDisplayFileName)
       return nil
     else
       job.errors.each do |field,error|
@@ -407,13 +599,16 @@ class RoguenarokController < ApplicationController
   def tiiAnalysis(params)
     jobid = params[:jobid]
     job = TiiAnalysis.new({:jobid => jobid})
-    
+
     ### If the input parameters have passed the validation, execute and return true
     if job.valid?
       job.save
+      name = job.getName
+      file = job.getFile
+
       link = url_for :controller => 'roguenarork', :action => 'work', :id => jobid
       job.execute(link)
-      return nil
+      return {:fileName => file, :jobName => name}
     else
       job.errors.each do |field,error|
         puts field
@@ -442,29 +637,121 @@ class RoguenarokController < ApplicationController
     end
 
     job = LsiAnalysis.new({:jobid => jobid, :dif => dif, :ent => ent, :max => max})
-    
+
     ### If the input parameters have passed the validation, execute and return true
     if job.valid?
       job.save
-      link = url_for :controller => 'roguenarork', :action => 'work', :id => jobid
+
+      name = job.getName
+      file = job.getFile
+
+      link = url_for :controller => 'roguenarork', :action => 'work', :id => jobid 
       job.execute(link)
-      return nil
+
+      return {:fileName => file, :jobName => name, :mode => [dif, ent, max] }
     else
       job.errors.each do |field,error|
         puts field
         puts error
-      end
+      end      
       return job
-    end
+    end    
   end
 
+
+  def calculateRbic(currentTreeFile, numberExcluded, numberOfTaxa)
+    fh = File.open(currentTreeFile)
+    tree = fh.readline
+    fh.close
+    
+    result = tree.scan(/\[(\d+)\]/).map{ |v| v[0].to_f}.reduce(0) do |sum, value|
+      sum +  value
+    end
+
+    numBip = tree.scan(/\[(\d+)\]/).map{|v| v[0]}.length
+    
+    result /= (100 * (numberOfTaxa - 3 )  )
+    logger.warn "\n\n" +  result.to_s
+    
+    result = sprintf("%0.3f", result)   
+
+    possible = numberOfTaxa - 3 
+    
+    return [numberExcluded, numBip, possible, result]
+#     return "excluded: #{numberExcluded}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;\
+# #bipartitions: #{numBip}/#{possible}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;\
+# RBIC: #{result}"  
+  end
+
+
   def wait
-    @jobid = params[:jobid]
-      
+    @jobid = params[:jobid] 
+    searchWasParsed = false 
+
     if !(jobIsFinished?(@jobid))
       render :action => 'wait' ,:jobid => @jobid
-    else
-      redirect_to :action => 'work', :jobid => @jobid
+    else      
+      job = Roguenarok.find(:first, :conditions =>{:jobid => @jobid})
+      
+      fileName = job.filetoparse
+      jobName = job.searchname
+
+      # there is something to parse 
+      if  ! fileName.nil? 
+        if job.modes =~ /DIF/ || job.modes =~ /ENT/ || job.modes =~ /MAX/ 
+          # create multiple search instances for a lsi analysis
+          if job.modes =~ /MAX/
+            s = Search.new({:jobid =>  @jobid, :name => jobName + "_max", :filename => fileName})
+            s.mode = :max
+            s.save
+            s.parseResult 
+            @sortedby = s.id 
+            searchWasParsed = true 
+          end
+
+          if job.modes =~ /ENT/
+            s = Search.new({:jobid =>  @jobid, :name => jobName + "_ent", :filename => fileName})
+            s.mode = :ent
+            s.save
+            s.parseResult
+            @sortedby = s.id
+            searchWasParsed = true 
+          end
+
+          if job.modes =~ /DIF/
+            s = Search.new({:jobid =>  @jobid, :name => jobName + "_dif", :filename => fileName})
+            s.mode = :dif
+            s.save
+            s.parseResult
+            @sortedby = s.id
+            searchWasParsed = true 
+          end
+
+        else
+          s = Search.new({:jobid =>  @jobid, :name => jobName, :filename => fileName})
+          s.save
+          s.parseResult
+          @sortedby = s.id
+          searchWasParsed = true 
+        end 
+      end
+      
+      # sort by the search, we last parsed        
+      if searchWasParsed
+        job.update_attribute(:sortedby,  @sortedby) 
+        job.update_attribute(:filetoparse, nil)
+        job.update_attribute(:searchname, nil)
+        job.update_attribute(:modes, nil) 
+        job.update_attribute(:ispruning, true)
+      end
+
+      if ! job.display_path.nil?
+        job.update_attribute(:display_path, nil)
+        redirect_to :action => 'work', :jobid => @jobid, :display => "true"
+      else
+        redirect_to :action => 'work', :jobid => @jobid
+      end      
+      
     end
   end
 
@@ -472,25 +759,24 @@ class RoguenarokController < ApplicationController
     @error_id = ""
     @error_email = ""
     if !(params[:jobid].nil?)
-      @error_id = "The job  with the id \'#{params[:jobid]}\' does not exists or is not finished yet"
+      @error_id = "The job  with the id \'#{params[:jobid]}\' does not exist."
     elsif !(params[:email].nil?) && !(params[:email].eql?("\'\'"))
       @error_email = "No jobs for \'#{params[:email]}\' available!"
     end
   end
 
   def listJobs
-    
     jobs_email = params[:email_address][:email]
+    
     jobid = params[:job_id][:id]
     puts jobid
     puts jobs_email
     if jobs_email.nil? || jobs_email.empty?
       if Roguenarok.exists?(:jobid => jobid)
-        redirect_to :action => "work" , :jobid => jobid
+        redirect_to :action => "wait" , :jobid => jobid
       else
         redirect_to :action => "look" ,:jobid => jobid
-      end
-      
+      end 
     else
       job_exists = false;
       if User.exists?(:email => jobs_email) && (!jobs_email.eql?(""))
@@ -512,68 +798,73 @@ class RoguenarokController < ApplicationController
   end
 
   def allJobs
-    @jobs_email = params[:email]
-    users = User.find(:all , :conditions => {:email => @jobs_email})
+    @jobs_email = params[:email].gsub("\'", "")    
+
+    user = User.find(:first , :conditions => {:email => @jobs_email})
     @jobids=[]
     @jobdescs=[]
     @time_left = []
-    users.each do |u|  
-      rog =  Roguenarok.find(:all, :conditions => {:user_id => u.id})
-      time_now = Time.new
-      time = 60*60*24*7*2 #2 weeks
-      rog.each do |r|
-        if r.description.eql?("") || r.description.nil?
-          @jobids << r.jobid
-          @jobdescs << "";
-        else
-          @jobids << r.jobid
-          @jobdescs << r.description.gsub(/__/," ")
-        end
-        e = r.created_at.to_s                                                                                                                              
-        if  e =~ /(\d+)-(\d+)-(\d+)\s*(\d+):(\d+):(\d+)/                 
-          year = $1.to_i
-          month = $2.to_i
-          day = $3.to_i
-          hour = $4.to_i
-          minutes = $5.to_i
-          seconds = $6.to_i
-          create_time = Time.mktime(year,month,day,hour,minutes,seconds)
-          sec_left =  time - (time_now.to_i - create_time.to_i)
-          minutes = sec_left.to_i/60
-          hours = minutes / 60
-          days = hours / 24
-          days = days+1
-          if days > 0
-            hours = hours % 24 
-            minutes = minutes % 60
-            if days > 1
-              @time_left << days.to_s+" days"
-            else
-              @time_left << days.to_s+" day"
-            end
+    rogs = Roguenarok.find(:all, :conditions => {:user_id => user.id})
+    time_now = Time.new
+    time = 60*60*24*7*2 #2 weeks
+    rogs.each do |r|
+      if r.description.eql?("") || r.description.nil?
+        @jobids << r.jobid
+        @jobdescs << "";
+      else
+        @jobids << r.jobid
+        @jobdescs << r.description.gsub(/__/," ")
+      end
+      e = r.created_at.to_s 
+      if  e =~ /(\d+)-(\d+)-(\d+)\s*(\d+):(\d+):(\d+)/                 
+        year = $1.to_i
+        month = $2.to_i
+        day = $3.to_i
+        hour = $4.to_i
+        minutes = $5.to_i
+        seconds = $6.to_i
+        create_time = Time.mktime(year,month,day,hour,minutes,seconds)
+        sec_left =  time - (time_now.to_i - create_time.to_i)
+        minutes = sec_left.to_i/60
+        hours = minutes / 60
+        days = hours / 24
+        days = days+1
+        if days > 0
+          hours = hours % 24 
+          minutes = minutes % 60
+          if days > 1
+            @time_left << days.to_s+" days"
           else
-            @time_left << "today"
+            @time_left << days.to_s+" day"
           end
-        end  
-      end                                        
+        else
+          @time_left << "today"
+        end
+      end  
     end
   end
 
 
   def deleteJobs
     jobs_email = params[:email][:email]
-    if !params[:jobs].nil?
-      params[:jobs].each do |box|
+    
+    if !params[:job].nil?
+      params[:job].each do |box|
         no = box[0]
         value = box[1]
         if value.size > 1  #if not marked it should be "0"
           jobid = value
           rog = Roguenarok.find(:first,:conditions => {:jobid => jobid})
-          Roguenarok.destroy(rax.id)
-          taxa = Taxon.find(:all,:conditions => {:roguenarok_id => rog.id})
-          taxa.each do |taxon|
-            taxon.destroy
+          Roguenarok.destroy(rog.id)
+          
+          # kill all taxa 
+          searches = Search.find(:all, :conditions => {:jobid => jobid })
+          searches.each do |search | 
+            search.destroy
           end
+          
+          Taxon.delete_all("roguenarok_id = #{jobid}")
+
           command = "rm -r " + File.join( RAILS_ROOT, "public", "jobs", jobid)
           system command
         end
@@ -585,7 +876,7 @@ class RoguenarokController < ApplicationController
   def contact
     @error = ""
     if !(params[:id].nil?)
-      @error = "An error occurres, please try again!"
+      @error = "An error occurred, please try again!"
     end
   end
 
@@ -602,6 +893,8 @@ class RoguenarokController < ApplicationController
     message = message.gsub(/\s/,"__")
     message = message.gsub(/\"/,"\\\"")
     message = message.gsub(/\'/,"\\\\\'")
+    
+    
     if Roguenarok.sendMessage(name,email,subject,message)
       redirect_to :action => "confirmation"
     else
@@ -613,31 +906,23 @@ class RoguenarokController < ApplicationController
 
   end
 
+  # def citation
+    
+  # end
+  
   def about
 
   end
-  
-  def download 
-    jobs_path = Pathname.new( File.join( RAILS_ROOT, "public", "jobs"))
-    jobid    = File.basename( params[:jobid])
-    filename = File.basename( params[:filename])
-    file = jobs_path.join( jobid, "results", filename).cleanpath
-    if( file.to_s =~ /#{jobs_path.to_s}/)
-      send_file file
-    else
-      raise ActionController::RoutingError.new('Not Found')
-    end
-  end
 
   def generateJobID
-    id = "#{rand(9)}#{rand(9)}#{rand(9)}#{rand(9)}#{rand(9)}#{rand(9)}#{rand(9)}#{rand(9)}#{rand(9)}"	
+    id = "#{rand(9)}#{rand(9)}#{rand(9)}#{rand(9)}#{rand(9)}#{rand(9)}#{rand(9)}#{rand(9)}#{rand(9)}#{rand(9)}#{rand(9)}#{rand(9)}#{rand(9)}#{rand(9)}#{rand(9)}#{rand(9)}#{rand(9)}#{rand(9)}"	
     searching_for_valid_id = true
     while searching_for_valid_id
       r = Roguenarok.find(:first, :conditions => {:jobid => id})
       if r.nil?
         return id
       end
-      id  = "#{rand(9)}#{rand(9)}#{rand(9)}#{rand(9)}#{rand(9)}#{rand(9)}#{rand(9)}#{rand(9)}#{rand(9)}"
+      id  = "#{rand(9)}#{rand(9)}#{rand(9)}#{rand(9)}#{rand(9)}#{rand(9)}#{rand(9)}#{rand(9)}#{rand(9)}#{rand(9)}#{rand(9)}#{rand(9)}#{rand(9)}#{rand(9)}#{rand(9)}#{rand(9)}#{rand(9)}#{rand(9)}"
     end 
     return id
   end
@@ -645,6 +930,10 @@ class RoguenarokController < ApplicationController
   def buildJobDir(jobid)
     directory = File.join( RAILS_ROOT, "public", "jobs", jobid)
     Dir.mkdir(directory) rescue system("rm -r #{directory}; mkdir #{directory}")
+
+    fh = File.open( File.join( RAILS_ROOT, "public", "jobs", jobid, "current.log"), "w")
+    fh.write("done!")
+    fh.close()    
   end
 
   def destroyJobDir(jobid)
@@ -652,129 +941,133 @@ class RoguenarokController < ApplicationController
     Dir.rmdir(directory) rescue system("rm -r #{directory};")
   end
 
-  def taxaToTable(taxa)
+  def prepareForTaxaTable(jobid)
+    logger.warn "\n\ntrying to find everything"
 
-    # sort by names
-    names = Hash.new
-    taxa.each do |t|
-      if t.excluded.eql?("T")
-        if names["<del>#{t.name}</del>"].nil?
-          names["<del>#{t.name}</del>"] = []
-          names["<del>#{t.name}</del>"] << t
-        else
-          names["<del>#{t.name}</del>"] << t
-        end
-      else
-        if names[t.name].nil?
-          names[t.name] = []
-          names[t.name] << t
-        else
-          names[t.name] << t
-        end
-      end
-    end
+    search = Search.find(:first, :conditions => {:jobid => jobid, :name => "dummy"})
+    taxa = Taxon.find(:all, :conditions => {:roguenarok_id => jobid,  :search_id => search.id}) 
     
-    score_types = Hash.new
-    names.each_key do |k|
-      scores = Hash.new
-      for i in 0..names[k].size-1
-        taxon = names[k][i]
+    allTaxa = taxa.select{ |t| t.excluded.eql?("F" )} + taxa.select{ |t| t.excluded.eql?("T" )}
+    @allTaxa = allTaxa.map{|t| t.name}
+    @allTaxaExcl = allTaxa.select{|t| t.excluded.eql?("T")}.map{ |t| t.name }
 
-        # determine score name extensions
-        dropset = ""
-        bipart = ""
-        support = ""
-        user_def = ""
-        if !taxon.dropset.nil?
-          dropset = "ds#{taxon.dropset}"
-        end
-        if !taxon.n_bipart.nil?
-          bipart = "bipart"
-        end
-        if !taxon.support.nil?
-          support = "sup"
-        end
-        if !taxon.userdef.nil?
-          user_def = "userDef#{taxon.user_def}"
-        end
-        ### Save scores
-        if !taxon.strict.nil?
-          scores["strict_"+sup+bipart+"_"+dropset] = taxon.strict  # only sup or bipart can be selected, so one of it is ""
-          score_types["strict_"+sup+bipart+"_"+dropset] = ""
-        end
-        if !taxon.mr.nil?
-          scores["mr_"+sup+bipart+"_"+dropset] = taxon.mr
-          score_types["mr_"+sup+bipart+"_"+dropset] = ""
-        end
-        if !taxon.mre.nil?
-          scores["mre_"+sup+bipart+"_"+dropset] = taxon.mre
-          score_types["mre_"+sup+bipart+"_"+dropset] = ""
-        end
-        if !taxon.userdef.nil?
-          scores[user_def+"_"+sup+bipart+"_"+dropset] = taxon.userdef
-          score_types[user_def+"_"+sup+bipart+"_"+dropset] = ""
-        end
-        if !taxon.bipart.nil?
-          scores["bipart_"+sup+bipart+"_"+dropset] = taxon.bipart
-          score_types["bipart_"+sup+bipart+"_"+dropset] = ""
-        end
-        if !scores["lsi_dif"].nil?
-          scores["lsi_dif"] = taxon.lsi_dif
-          score_types["lsi_dif"] = ""
-        end
-        if !scores["lsi_ent"].nil?
-          scores["lsi_ent"] = taxon.lsi_ent
-          score_types["lsi_ent"] = ""
-        end
-        if !scores["lsi_max"].nil?
-          scores["lsi_max"] = taxon.lsi_max
-          score_types["lsi_max"] = ""
-        end
-        if !scores["tii"].nil?
-          scores["tii"] = taxon.tii
-          score_types["tii"] = ""
-        end
-      end
-      names[k] = scores
-    end
-    ### add missing cells
-    headers = Array.new
-    names.each_key do |name|
-      score_types.each_key do |tp|
-        headers << tp
-        if names[name][tp].nil?
-          names[name][tp] = "-"
-        end
-      end
-    end
-   
-    ### sort table columns alphabetically
-    table = Hash.new
 
-    headers.sort!
-    headers = ["Name"].concat(headers)
-    headers.each do |h|
-      names.each_key do |name|
-        if table[name].nil?
-          table[name] = []
-          table[name] << name
-          if !h.eql?("Name")
-            table[name] << names[name][h]
+    # take notes, if the taxon was checked
+    @checkedTaxa = taxa.select{ |t| t.isChecked }.map{|t| t.name}
+
+    otherSearches = Search.find(:all, :conditions => {:jobid => jobid})
+    
+    @osName = []
+    @osId = []
+    @allSearchData = []
+    @dropsetData = []
+    for i in 0..(otherSearches.size-1)
+      search = otherSearches[i]
+      if ! search.name.eql?("dummy") 
+        @osName.push(search.name)
+        @osId.push(search.id)
+        
+        taxa = Taxon.find(:all, :conditions => ["search_id = #{search.id}"])
+        
+        asHash = {}
+        dropsets = {}
+        taxa.each do |t|
+          if t.excluded.eql?("T")
+            asHash[t.name] = "IGN"
+          else
+            asHash[t.name] = t.score
           end
-        elsif !h.eql?("Name")
-          table[name] << names[name][h]
+          
+          if  t.dropset != 1
+            dropsets[t.name] = t.dropset
+          end 
+
+        end
+
+        # add score and dropset data   
+        @allSearchData.push(asHash)
+        @dropsetData.push(dropsets) 
+      end
+    end     
+
+    # sort 
+    job = Roguenarok.find(:first, :conditions => {:jobid => jobid})     
+    s = Search.find(:first, :conditions => {:id => job.sortedby})
+    if ! s.nil?
+      @sortedby = s.id
+      tmp = Taxon.find(:all, :conditions => {:search_id => s.id})
+      orderedTaxa = tmp.select{|t| t.excluded.eql?("F")} + tmp.select{|t| t.excluded.eql?("T")}
+      
+      orderedTaxa = orderedTaxa.map{ |t| t.name }
+      
+      orderedTaxa += (@allTaxa - orderedTaxa)
+      @allTaxa = orderedTaxa
+    end 
+    
+    # add color modificator 
+    @colMod = []
+    for i in 0..(@osName.size-1)
+      searchName = @osName[i]
+
+      colsHere = {} 
+      minVal= 0.0; maxVal= 1.0
+      
+      if searchName =~ /tii/ 
+        minVal= @allSearchData[i].values.select{|v| ! v.eql?("IGN")}.min
+        maxVal= @allSearchData[i].values.select{|v| ! v.eql?("IGN")}.max
+        raise "minVal= maxValfor tii scores " if minVal== maxVal
+      end
+
+      if searchName =~ /rnr/
+        minVal= 0.0
+        maxVal= 3.0
+      end
+      
+      if searchName =~ /lsi/
+        minVal = -1.0
+        maxVal = -0.4
+        
+        tmp  =   - @allSearchData[i].values.select{|v| ! v.eql?("IGN") }.min
+        maxVal = tmp if tmp > maxVal
+          
+      end
+
+      @allTaxa.each do |t| 
+        if ! @allSearchData[i].nil? && @allSearchData[i].has_key?(t)
+          score = @allSearchData[i][t] 
+
+          if ! score.eql?("IGN")
+            score = score / @dropsetData[i][t] if @dropsetData[i].has_key?(t)
+            
+            if searchName =~ /lsi/ 
+              score = - score
+            end
+
+            col = scoreToColor(score , minVal,maxVal) 
+            colsHere[t] = col 
+          end
         end
       end
+      @colMod.push(colsHere)
     end
-    table["header"] = headers
-    return table  #[taxa_name][score_name][score]
   end
+
+  
+  # maps a score to 3 rgb values 
+  def scoreToColor(score, minVal, maxVal)
+    maxColor = 230.0
+    minColor = 10.0
+    norm = (((score.to_f - minVal ) / (maxVal - minVal ) )  * (maxColor - minColor)) + minColor    
+    norm = [maxColor, norm].min    
+    return [minColor, norm, norm]
+  end
+
 
   def jobIsFinished?(jobid)
     rog = Roguenarok.find(:first, :conditions => {:jobid => jobid}) 
-    path = File.join(RAILS_ROOT,"public","jobs",jobid)
-    finished = false
-    Dir.glob(File.join(path,"current.log")){|file|
+    path = File.join( RAILS_ROOT, "public", "jobs", jobid)
+    
+    Dir.glob( File.join( path, "current.log")){|file|
       f = File.open(file,'r')
       fi = f.readlines
       if fi.size > 0
@@ -786,7 +1079,6 @@ class RoguenarokController < ApplicationController
       end
       f.close
     }
-    return finished       
+    return false
   end
-
 end
