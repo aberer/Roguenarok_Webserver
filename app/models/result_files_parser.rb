@@ -2,8 +2,8 @@ class ResultFilesParser
   attr_reader :files, :names
 
   def initialize(path)
-    @files = []
     @names = []
+    @filenames = []
     getFiles(path)
   end
   
@@ -16,10 +16,10 @@ class ResultFilesParser
       if file =~ /([\w_\-\.\:\;]+)$/
         @names << $1
       else
-        @names << file
+        @names << File.basename( file)
       end
+      @filenames = File.basename( file)
     end
-      
-             
   end
+
 end

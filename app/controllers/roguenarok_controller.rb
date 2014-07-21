@@ -9,7 +9,6 @@ class RoguenarokController < ApplicationController
   def submit
     @job = Roguenarok.new
     @user = User.new
-
   end
 
   ###################################################################################
@@ -51,7 +50,6 @@ class RoguenarokController < ApplicationController
     if ip.eql?("") || ip.nil?
       ip = "xxx.xxx.xxx.xxx"
     end
-    @user;
     if User.exists?(:ip => ip)
       @user = User.find(:first, :conditions => {:ip => ip})
    #   #If this user has not used an email address in the past, save it
@@ -110,7 +108,7 @@ class RoguenarokController < ApplicationController
         puts field
         puts error
       end
-      render  :action => 'submit'
+      render :action => 'submit'
     end
   end
 
@@ -123,11 +121,11 @@ class RoguenarokController < ApplicationController
     path     = File.join(job_path,"results")
     ### get result files
     @files = []
-    @file_names = []
+    @names = []
     if File.exists?(path) && File.directory?(path)
       r = ResultFilesParser.new(path)
-      @file_names = r.names
-      @files = r.files
+      @names = r.names
+      @filenames = r.filenames
     end
 
     #### CHECK WHICH SUBMISSION HAS TO BE PERFORMED
@@ -191,7 +189,7 @@ class RoguenarokController < ApplicationController
     @user_def = false
     @user_def_value = nil
     @bipartitions = false
-    @best_tree_available = !File.exists?(File.join(RAILS_ROOT,"public","jobs",@jobid, "best_tree"))
+    @best_tree_available = !File.exists?(File.join(RAILS_ROOT, "public", "jobs", @jobid, "best_tree"))
   
     ### Initialize Job Description
     job = Roguenarok.find(:first, :conditions => ["jobid = #{@jobid}"])
@@ -576,7 +574,7 @@ class RoguenarokController < ApplicationController
           taxa.each do |taxon|
             taxon.destroy
           end
-          command = "rm -r #{RAILS_ROOT}/public/jobs/#{jobid}"
+          command = "rm -r " + File.join( RAILS_ROOT, "public", "jobs", jobid)
           system command
         end
       end
@@ -612,7 +610,7 @@ class RoguenarokController < ApplicationController
   end
 
   def confirmation
-    
+
   end
 
   def about
@@ -620,8 +618,15 @@ class RoguenarokController < ApplicationController
   end
   
   def download 
-    file = params[:file]
-    send_file file
+    jobs_path = Pathname.new( File.join( RAILS_ROOT, "public", "jobs"))
+    jobid    = File.basename( params[:jobid])
+    filename = File.basename( params[:filename])
+    file = jobs_path.join( jobid, "results", filename).cleanpath
+    if( file.to_s =~ /#{jobs_path.to_s}/)
+      send_file file
+    else
+      raise ActionController::RoutingError.new('Not Found')
+    end
   end
 
   def generateJobID
@@ -638,12 +643,12 @@ class RoguenarokController < ApplicationController
   end
 
   def buildJobDir(jobid)
-    directory = "#{RAILS_ROOT}/public/jobs/#{jobid}/"
+    directory = File.join( RAILS_ROOT, "public", "jobs", jobid)
     Dir.mkdir(directory) rescue system("rm -r #{directory}; mkdir #{directory}")
   end
 
   def destroyJobDir(jobid)
-    directory = "#{RAILS_ROOT}/public/jobs/#{jobid}/"
+    directory = File.join( RAILS_ROOT, "public", "jobs", jobid)
     Dir.rmdir(directory) rescue system("rm -r #{directory};")
   end
 

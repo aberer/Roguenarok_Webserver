@@ -190,14 +190,13 @@
       </div>
     </td>
     
-    <!-- Right Section where are the result files are listed for download -->
+    <!-- Right Section where the result files are listed for download -->
     <td valign="top">
       <h3>Result Files</h3>
-      </br>
       <ul>
-        <% for i in 0..@file_names.size-1 %>
-        <li><%= link_to @file_names[i], :action => 'download' , :file => @files[i]%></li>
-        <% end %>
+        <% i = 0; while i<@names.size %>
+           <li><%= link_to "#{@names[i]}", :action => "download" , :jobid => "#{@jobid}", :filename => "#{@filenames[i]}"%></li>
+        <% i = i+1; end %>
       </ul>
     <td>
   </tr>
