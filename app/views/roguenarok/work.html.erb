@@ -287,7 +287,7 @@
 	    <% if (i % 2 == 0) ; col = "#e1dded" ; else col = "#ffe0c2" ; end %>
 	    <tr>
 	      <td bgcolor=<%=col%>>
-		<img title="select from top to here"  type="help" src="../images/right.png" class="multiselect" onClick="checkUntil(<%= i%>);" onMouseOver="this.style.cursor='pointer';" > 
+            <%= image_tag "right.png", :type => "help", :title => "select from top to here", :class => "multiselect", :onclick =>"checkUntil(#{i});", :onMouseOver => "this.style.cursor='pointer';" %>
 	      </td>
 	      <td bgcolor=<%=col%>>
 		<input type="checkbox"  
@@ -357,7 +357,6 @@
   </tr>
 </table>
 
-<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.3.2/jquery.min.js" > </script>
 <script>
 $(function()
   {
