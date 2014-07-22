@@ -9,7 +9,7 @@
 #
 # It's strongly recommended to check this file into your version control system.
 
-ActiveRecord::Schema.define(:version => 20120115161609) do
+ActiveRecord::Schema.define(:version => 20120325093830) do
 
   create_table "excluded_taxons", :force => true do |t|
     t.integer  "taxon_id"
@@ -18,49 +18,56 @@ ActiveRecord::Schema.define(:version => 20120115161609) do
   end
 
   create_table "lsi_analyses", :force => true do |t|
-    t.string   "jobid",      :limit => 9
+    t.string   "jobid"
     t.datetime "created_at"
     t.datetime "updated_at"
   end
 
   create_table "prunings", :force => true do |t|
-    t.string   "jobid",      :limit => 9
+    t.string   "jobid"
     t.datetime "created_at"
     t.datetime "updated_at"
   end
 
   create_table "rogue_taxa_analyses", :force => true do |t|
-    t.integer  "jobid",      :limit => 9
+    t.integer  "jobid"
     t.datetime "created_at"
     t.datetime "updated_at"
   end
 
   create_table "roguenaroks", :force => true do |t|
     t.integer  "user_id"
-    t.string   "jobid",       :limit => 9
+    t.string   "jobid"
     t.string   "description"
+    t.datetime "created_at"
+    t.datetime "updated_at"
+    t.integer  "sortedby"
+    t.string   "filetoparse"
+    t.string   "searchname"
+    t.string   "modes"
+    t.boolean  "ispruning",    :default => false
+    t.string   "display_path"
+  end
+
+  create_table "searches", :force => true do |t|
+    t.string   "jobid"
+    t.string   "filename"
+    t.string   "name"
     t.datetime "created_at"
     t.datetime "updated_at"
   end
 
   create_table "taxons", :force => true do |t|
-    t.integer  "roguenarok_id"
-    t.integer  "dropset"
+    t.string   "roguenarok_id"
     t.string   "name"
-    t.string   "strict"
-    t.string   "mr"
-    t.string   "mre"
-    t.string   "userdef"
-    t.string   "bipart"
-    t.string   "lsi_dif"
-    t.string   "lsi_ent"
-    t.string   "lsi_max"
-    t.string   "tii"
-    t.string   "support",       :limit => 1
-    t.string   "n_bipart",      :limit => 1
-    t.string   "excluded",      :limit => 1, :default => "F"
     t.datetime "created_at"
     t.datetime "updated_at"
+    t.integer  "search_id"
+    t.integer  "pos"
+    t.integer  "dropset",       :default => 1,     :null => false
+    t.float    "score"
+    t.string   "excluded",      :default => "F"
+    t.boolean  "isChecked",     :default => false
   end
 
   create_table "tii_analyses", :force => true do |t|
