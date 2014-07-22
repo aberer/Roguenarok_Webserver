@@ -59,7 +59,7 @@ class SendMessage
 
   
   def send_email
-    config_lines = File.open("/srv/rnr-srv/lib/email.conf", "r").readlines.map{ |line| line.chop }
+    config_lines = File.open( File.join( RAILS_ROOT, "lib", "email.conf"), "r").readlines.map{ |line| line.chop }
     from = config_lines[0]
     password = config_lines[1]
     

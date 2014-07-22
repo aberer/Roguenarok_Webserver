@@ -198,8 +198,8 @@ ls -tr #{jobPath}/display/ > #{jobPath}/phyloNames"
       
       system "cp #{RAILS_ROOT}/public/config_file #{jobPath}" 
       
-      system "rm -f #{jobPath}/display_tree.xml ; \
-java -cp #{RAILS_ROOT}/lib/forester.jar  org.forester.application.phyloxml_converter -f=nn #{jobPath}/display_tree  #{jobPath}/display_tree.xml"
+      system "rm -f #{jobPath}/display_tree.xml"
+      system "java -cp #{RAILS_ROOT}/bioprogs/java/forester.jar org.forester.application.phyloxml_converter -f=nn #{jobPath}/display_tree  #{jobPath}/display_tree.xml"
       
       confFileHandle = File.open("#{jobPath}/config_file", "a")
       id = 1
