@@ -70,10 +70,24 @@
   &nbsp;
 </div>
 
-<ul>
-  <li> small (150 taxa): &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;  <a href="/rnr/150.bs"> bootstrapTreeSet </a> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="/rnr/150.tre"> ML-tree   </a>    
-  <li> large (404 taxa): &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <a href="/rnr/404.bs"> bootstrapTreeSet </a>  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <a href="/rnr/404.tre">ML-tree</a>
-</ul>
+<table>
+  <th>
+    <td colspan=3>
+      Right-click on the links to download
+    </td>
+  </th>
+  <tr>
+    <td>small (150 taxa):</td>
+    <td><%= link_to "bootstrapTreeSet", :controller => "testing", :action => "150.bs" %></td>
+    <td><%= link_to "ML-tree"         , :controller => "testing", :action => "150.tre"%></td>        
+  <tr>
+  <tr> 
+    <td>large (404 taxa):</td> 
+    <td><%= link_to "bootstrapTreeSet", :controller => "testing", :action => "404.bs" %></td>
+    <td><%= link_to "ML-tree"         , :controller => "testing", :action => "404.tre"%></td>
+  <tr>
+</table>
+
 <p>&nbsp;</p>
 
 <div class="separator_bottom">
