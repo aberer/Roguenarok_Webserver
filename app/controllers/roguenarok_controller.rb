@@ -268,8 +268,8 @@ class RoguenarokController < ApplicationController
   def work
     @jobid = params[:jobid]
 
-    path = File.join(RAILS_ROOT,"public","jobs",@jobid,"results")
-    job_path =  File.join(RAILS_ROOT,"public","jobs",@jobid)
+    job_path = File.join(RAILS_ROOT,"public","jobs",@jobid)
+    path     = File.join(job_path,"results")
 
     #### CHECK WHICH SUBMISSION HAS TO BE PERFORMED    
     jobtype = params[:jobtype]
@@ -282,6 +282,8 @@ class RoguenarokController < ApplicationController
     when "analysis"
       updateCheckedTaxa(@jobid, [])
       
+      Rails.logger.info( "#{@jobid}: taxa_analysis: #{params[:taxa_analysis]}")
+      
       tmp = rogueTaxaAnalysis(params) if params[:taxa_analysis].eql?("RogueNaRok" )
       tmp = lsiAnalysis(params) if params[:taxa_analysis].eql?("leaf stability index" )
       tmp = tiiAnalysis(params) if params[:taxa_analysis].eql?("taxonomic instability index" )
@@ -293,10 +295,8 @@ class RoguenarokController < ApplicationController
         
         if tmp.has_key?(:mode)  # for lsi 
           currentJob.update_attribute(:modes, tmp[:mode].join(",")) 
-          redirect_to :action => 'wait', :jobid => @jobid
-        else
-          redirect_to :action => 'wait', :jobid => @jobid
         end
+        redirect_to :action => 'wait', :jobid => @jobid
       else        
         @job = tmp 
       end
@@ -1021,7 +1021,6 @@ class RoguenarokController < ApplicationController
         
         tmp  =   - @allSearchData[i].values.select{|v| ! v.eql?("IGN") }.min
         maxVal = tmp if tmp > maxVal
-          
       end
 
       @allTaxa.each do |t| 
