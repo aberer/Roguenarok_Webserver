@@ -192,9 +192,11 @@ class RoguenarokController < ApplicationController
       deleteSuperfluousFiles( File.join( jobPath, "display") )
       
       # concatenate all trees  
+      Rails.logger.info( "#{@jobid}: concatenate all trees to #{jobPath}/display_tree and add list to #{jobPath}/phyloNames")
       system "cat $(ls -tr #{jobPath}/display/*) | head -n 10  > #{jobPath}/display_tree"
       system "ls -tr #{jobPath}/display/ > #{jobPath}/phyloNames"
-      system "cp #{RAILS_ROOT}/public/config_file #{jobPath}" 
+      
+      Rails.logger.info( "#{@jobid}: preparing #{jobPath}/display_tree.xml")
       system "rm -f #{jobPath}/display_tree.xml"
       system "java -cp #{RAILS_ROOT}/bioprogs/java/forester.jar org.forester.application.phyloxml_converter -f=nn #{jobPath}/display_tree  #{jobPath}/display_tree.xml"
       
@@ -203,6 +205,8 @@ class RoguenarokController < ApplicationController
 
       annotatePhyFile(File.join(jobPath,"display_tree.xml"),File.join(jobPath,"phyloNames"))
 
+
+      system "cp #{RAILS_ROOT}/public/config_file #{jobPath}" 
       confFileHandle = File.open("#{jobPath}/config_file", "a")
       id = 1
       
@@ -240,15 +244,17 @@ class RoguenarokController < ApplicationController
 
       tree_file = "http://rnr.h-its.org/rnr/jobs/#{@jobid}/display_tree.xml"      
       config_file = "http://rnr.h-its.org/rnr/jobs/#{@jobid}/config_file"
+      Rails.logger.info( "#{@jobid}: tree_file at #{tree_file}")
+      Rails.logger.info( "#{@jobid}: config_file at #{config_file}")
 
 #       file = File.open("/rnr/jobs/#{@jobid}/display_tree.xml", "w")
 
-      fileA = File.join(["#{jobPath}", "display_tree.xml"])
-      fileB = File.join(["#{jobPath}", "config_file"])
+      fileA = File.join( jobPath, "display_tree.xml")
+      fileB = File.join( jobPath, "config_file")
       
-      File.chmod(0755, fileA ) 
-      File.chmod(0755, fileB ) 
-      File.chmod(0755, "#{jobPath}")
+      File.chmod( 0755, fileA ) 
+      File.chmod( 0755, fileB ) 
+      File.chmod( 0755, jobPath)
 #       file = File.new("/rnr/jobs/#{@jobid}/config_file", "w")
 #       File.chmod(0755, "/rnr/jobs/#{@jobid}/config_file")
 
@@ -257,6 +263,7 @@ class RoguenarokController < ApplicationController
       
       # call tree viewer  
       result = "\n<SCRIPT> $(document).ready(function(){openWin('#{tree_file}','#{config_file}');});</SCRIPT>\n"
+      Rails.logger.info( "#{@jobid}: result #{result}")
     end 
 
     return result
