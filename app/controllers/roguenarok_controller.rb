@@ -57,7 +57,7 @@ class RoguenarokController < ApplicationController
     if ip.eql?("") || ip.nil?
       ip = "xxx.xxx.xxx.xxx"
     end
-    @user;
+
     if User.exists?(:ip => ip)
       @user = User.find(:first, :conditions => {:ip => ip})
       @user.update_attributes(:email => email)
@@ -192,22 +192,19 @@ class RoguenarokController < ApplicationController
       deleteSuperfluousFiles( File.join( jobPath, "display") )
       
       # concatenate all trees  
-      command = "cat $(ls -tr #{jobPath}/display/*) | head -n 10  > #{jobPath}/display_tree ;\
-ls -tr #{jobPath}/display/ > #{jobPath}/phyloNames"
-      system command  
-      
+      system "cat $(ls -tr #{jobPath}/display/*) | head -n 10  > #{jobPath}/display_tree"
+      system "ls -tr #{jobPath}/display/ > #{jobPath}/phyloNames"
       system "cp #{RAILS_ROOT}/public/config_file #{jobPath}" 
-      
       system "rm -f #{jobPath}/display_tree.xml"
       system "java -cp #{RAILS_ROOT}/bioprogs/java/forester.jar org.forester.application.phyloxml_converter -f=nn #{jobPath}/display_tree  #{jobPath}/display_tree.xml"
       
-      confFileHandle = File.open("#{jobPath}/config_file", "a")
-      id = 1
-
-      command = "tr -d '\n' < #{jobPath}/display_tree.xml |  sed 's/>[ ]*</></g'   > #{jobPath}/tmp ; mv #{jobPath}/tmp #{jobPath}/display_tree.xml"
-      system command 
+      system "tr -d '\n' < #{jobPath}/display_tree.xml | sed 's/>[ ]*</></g' > #{jobPath}/tmp"
+      system " mv #{jobPath}/tmp #{jobPath}/display_tree.xml"
 
       annotatePhyFile(File.join(jobPath,"display_tree.xml"),File.join(jobPath,"phyloNames"))
+
+      confFileHandle = File.open("#{jobPath}/config_file", "a")
+      id = 1
       
       if File.exists?(jobPath + "pruned_taxa")
         pruned_taxa =  File.open(File.join(jobPath, "pruned_taxa")).readlines
@@ -218,12 +215,11 @@ ls -tr #{jobPath}/display/ > #{jobPath}/phyloNames"
           tmp = id.to_s.rjust(8, "0")
           confFileHandle.write("species_color: #{tmp} 0xFF0000\n")          
 
-          command =  "sed 's/\\(<name>#{taxon}<\\/name><branch_length>[0-9\\.]*<\\/branch_length>\\)/\\1<taxonomy><code>#{tmp}<\\/code><\\/taxonomy>/g' #{jobPath}/display_tree.xml > #{jobPath}/tmp ;\
- mv #{jobPath}/tmp #{jobPath}/display_tree.xml" 
-          system command 
-          command =  "sed 's/\\(<name>#{taxon}<\\/name>\\)\\(<[^b][^r][^a]\\)/\\1<taxonomy><code>#{tmp}<\\/code><\\/taxonomy>\\2/g' #{jobPath}/display_tree.xml > #{jobPath}/tmp ;\
- mv #{jobPath}/tmp #{jobPath}/display_tree.xml" 
-          system command 
+          system "sed 's/\\(<name>#{taxon}<\\/name><branch_length>[0-9\\.]*<\\/branch_length>\\)/\\1<taxonomy><code>#{tmp}<\\/code><\\/taxonomy>/g' #{jobPath}/display_tree.xml > #{jobPath}/tmp"
+          system "mv #{jobPath}/tmp #{jobPath}/display_tree.xml" 
+
+          system "sed 's/\\(<name>#{taxon}<\\/name>\\)\\(<[^b][^r][^a]\\)/\\1<taxonomy><code>#{tmp}<\\/code><\\/taxonomy>\\2/g' #{jobPath}/display_tree.xml > #{jobPath}/tmp"
+          system "mv #{jobPath}/tmp #{jobPath}/display_tree.xml" 
           
           id += 1 
         end
@@ -471,9 +467,7 @@ ls -tr #{jobPath}/display/ > #{jobPath}/phyloNames"
     
     ### Initialize Taxa Listing     
     prepareForTaxaTable(@jobid) 
-    
   end
-
 
   def updateCheckedTaxa(jobid, list)         
     s = Search.find(:first, :conditions => {:jobid => jobid, :name => "dummy" })    
@@ -482,8 +476,6 @@ ls -tr #{jobPath}/display/ > #{jobPath}/phyloNames"
       t.update_attribute(:isChecked, list.include?(t.name ))
     end 
   end
-
-
 
   def rogueTaxaAnalysis(params)
     ### Collect parameters for Rogue Taxa Analysis and try to save them
@@ -922,7 +914,7 @@ ls -tr #{jobPath}/display/ > #{jobPath}/phyloNames"
       if r.nil?
         return id
       end
-      id  = "#{rand(9)}#{rand(9)}#{rand(9)}#{rand(9)}#{rand(9)}#{rand(9)}#{rand(9)}#{rand(9)}#{rand(9)}#{rand(9)}#{rand(9)}#{rand(9)}#{rand(9)}#{rand(9)}#{rand(9)}#{rand(9)}#{rand(9)}#{rand(9)}"
+      id = "#{rand(9)}#{rand(9)}#{rand(9)}#{rand(9)}#{rand(9)}#{rand(9)}#{rand(9)}#{rand(9)}#{rand(9)}#{rand(9)}#{rand(9)}#{rand(9)}#{rand(9)}#{rand(9)}#{rand(9)}#{rand(9)}#{rand(9)}#{rand(9)}"
     end 
     return id
   end
