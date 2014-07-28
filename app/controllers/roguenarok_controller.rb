@@ -93,7 +93,6 @@ class RoguenarokController < ApplicationController
 
       cnt = 1 
       taxa.each do |t|        
-        logger.warn "\njobid is " + jobid
         taxon = Taxon.new({:roguenarok_id => jobid, :name => t.chomp!, :search_id => dummySearch.id, :pos => cnt})
         cnt += 1 
         taxon.save
@@ -185,86 +184,88 @@ class RoguenarokController < ApplicationController
     result = ""
     @jobid = params[:jobid]
     
-    if params.has_key?("display")
-      jobPath = File.join( RAILS_ROOT, "public", "jobs", @jobid)
+    if !params.has_key?("display")
+      return result
+    end
 
-      # remove duplicate file 
-      deleteSuperfluousFiles( File.join( jobPath, "display") )
-      
-      # concatenate all trees  
-      Rails.logger.info( "#{@jobid}: concatenate all trees to #{jobPath}/display_tree and add list to #{jobPath}/phyloNames")
-      system "cat $(ls -tr #{jobPath}/display/*) | head -n 10  > #{jobPath}/display_tree"
-      system "ls -tr #{jobPath}/display/ > #{jobPath}/phyloNames"
-      
-      Rails.logger.info( "#{@jobid}: preparing #{jobPath}/display_tree.xml")
-      system "rm -f #{jobPath}/display_tree.xml"
-      system "java -cp #{RAILS_ROOT}/bioprogs/java/forester.jar org.forester.application.phyloxml_converter -f=nn #{jobPath}/display_tree  #{jobPath}/display_tree.xml"
-      
-      system "tr -d '\n' < #{jobPath}/display_tree.xml | sed 's/>[ ]*</></g' > #{jobPath}/tmp"
-      system "mv #{jobPath}/tmp #{jobPath}/display_tree.xml"
+    jobPath = File.join( RAILS_ROOT, "public", "jobs", @jobid)
 
-      annotatePhyFile(File.join(jobPath,"display_tree.xml"),File.join(jobPath,"phyloNames"))
+    # remove duplicate file 
+    deleteSuperfluousFiles( File.join( jobPath, "display") )
+    
+    # concatenate all trees  
+    Rails.logger.info( "#{@jobid}: concatenate all trees to #{jobPath}/display_tree and add list to #{jobPath}/phyloNames")
+    system "cat $(ls -tr #{jobPath}/display/*) | head -n 10  > #{jobPath}/display_tree"
+    system "ls -tr #{jobPath}/display/ > #{jobPath}/phyloNames"
+    
+    Rails.logger.info( "#{@jobid}: preparing #{jobPath}/display_tree.xml")
+    system "rm -f #{jobPath}/display_tree.xml"
+    system "java -cp #{RAILS_ROOT}/bioprogs/java/forester.jar org.forester.application.phyloxml_converter -f=nn #{jobPath}/display_tree  #{jobPath}/display_tree.xml"
+    
+    system "tr -d '\n' < #{jobPath}/display_tree.xml | sed 's/>[ ]*</></g' > #{jobPath}/tmp"
+    system "mv #{jobPath}/tmp #{jobPath}/display_tree.xml"
+
+    annotatePhyFile(File.join(jobPath,"display_tree.xml"),File.join(jobPath,"phyloNames"))
 
 
-      system "cp #{RAILS_ROOT}/public/config_file #{jobPath}" 
-      confFileHandle = File.open("#{jobPath}/config_file", "a")
-      id = 1
-      
-      if File.exists?(jobPath + "pruned_taxa")
-        pruned_taxa =  File.open(File.join(jobPath, "pruned_taxa")).readlines
+    system "cp #{RAILS_ROOT}/public/config_file #{jobPath}" 
+    confFileHandle = File.open("#{jobPath}/config_file", "a")
+    id = 1
+    
+    if File.exists?(jobPath + "pruned_taxa")
+      pruned_taxa =  File.open(File.join(jobPath, "pruned_taxa")).readlines
 
-        pruned_taxa.each do |taxon| 
-          taxon.chomp!
-          
-          tmp = id.to_s.rjust(8, "0")
-          confFileHandle.write("species_color: #{tmp} 0xFF0000\n")          
-
-          system "sed 's/\\(<name>#{taxon}<\\/name><branch_length>[0-9\\.]*<\\/branch_length>\\)/\\1<taxonomy><code>#{tmp}<\\/code><\\/taxonomy>/g' #{jobPath}/display_tree.xml > #{jobPath}/tmp"
-          system "mv #{jobPath}/tmp #{jobPath}/display_tree.xml" 
-
-          system "sed 's/\\(<name>#{taxon}<\\/name>\\)\\(<[^b][^r][^a]\\)/\\1<taxonomy><code>#{tmp}<\\/code><\\/taxonomy>\\2/g' #{jobPath}/display_tree.xml > #{jobPath}/tmp"
-          system "mv #{jobPath}/tmp #{jobPath}/display_tree.xml" 
-          
-          id += 1 
-        end
+      pruned_taxa.each do |taxon| 
+        taxon.chomp!
         
-        # @curTreeInfo = calculateRbic(File.join(["#{jobPath}", "current_tree"]), 
-        #                              pruned_taxa.length,
-        #                              File.open("#{jobPath}/taxa_file", "r").readlines.length
-        #                              )
+        tmp = id.to_s.rjust(8, "0")
+        confFileHandle.write("species_color: #{tmp} 0xFF0000\n")          
 
+        system "sed 's/\\(<name>#{taxon}<\\/name><branch_length>[0-9\\.]*<\\/branch_length>\\)/\\1<taxonomy><code>#{tmp}<\\/code><\\/taxonomy>/g' #{jobPath}/display_tree.xml > #{jobPath}/tmp"
+        system "mv #{jobPath}/tmp #{jobPath}/display_tree.xml" 
+
+        system "sed 's/\\(<name>#{taxon}<\\/name>\\)\\(<[^b][^r][^a]\\)/\\1<taxonomy><code>#{tmp}<\\/code><\\/taxonomy>\\2/g' #{jobPath}/display_tree.xml > #{jobPath}/tmp"
+        system "mv #{jobPath}/tmp #{jobPath}/display_tree.xml" 
+        
+        id += 1 
       end
-      confFileHandle.close()
-
-#       tree_file = "http://#{ENV['SERVER_IP']}:8080/rnr/jobs/#{@jobid}/display_tree.xml"      
-#       config_file = "http://#{ENV['SERVER_IP']}:8080/rnr/jobs/#{@jobid}/config_file"
-
-#       tree_file = "http://#{ENV['SERVER_IP']}/rnr/jobs/#{@jobid}/display_tree.xml"      
-#       config_file = "http://#{ENV['SERVER_IP']}/rnr/jobs/#{@jobid}/config_file"
-
-      tree_file = "http://rnr.h-its.org/rnr/jobs/#{@jobid}/display_tree.xml"      
-      config_file = "http://rnr.h-its.org/rnr/jobs/#{@jobid}/config_file"
-      Rails.logger.info( "#{@jobid}: tree_file at #{tree_file}")
-      Rails.logger.info( "#{@jobid}: config_file at #{config_file}")
-
-#       file = File.open("/rnr/jobs/#{@jobid}/display_tree.xml", "w")
-
-      fileA = File.join( jobPath, "display_tree.xml")
-      fileB = File.join( jobPath, "config_file")
       
-      File.chmod( 0755, fileA ) 
-      File.chmod( 0755, fileB ) 
-      File.chmod( 0755, jobPath)
-#       file = File.new("/rnr/jobs/#{@jobid}/config_file", "w")
-#       File.chmod(0755, "/rnr/jobs/#{@jobid}/config_file")
+      # @curTreeInfo = calculateRbic(File.join(["#{jobPath}", "current_tree"]), 
+      #                              pruned_taxa.length,
+      #                              File.open("#{jobPath}/taxa_file", "r").readlines.length
+      #                              )
 
-#       File.chmod(755, tree_file)
-#       File.chmod(755, config_file)
-      
-      # call tree viewer  
-      result = "\n<SCRIPT> $(document).ready(function(){openWin('#{tree_file}','#{config_file}');});</SCRIPT>\n"
-      Rails.logger.info( "#{@jobid}: result #{result}")
-    end 
+    end
+    confFileHandle.close()
+
+#     tree_file = "http://#{ENV['SERVER_IP']}:8080/rnr/jobs/#{@jobid}/display_tree.xml"      
+#     config_file = "http://#{ENV['SERVER_IP']}:8080/rnr/jobs/#{@jobid}/config_file"
+
+#     tree_file = "http://#{ENV['SERVER_IP']}/rnr/jobs/#{@jobid}/display_tree.xml"      
+#     config_file = "http://#{ENV['SERVER_IP']}/rnr/jobs/#{@jobid}/config_file"
+
+    tree_file = "http://rnr.h-its.org/rnr/jobs/#{@jobid}/display_tree.xml"      
+    config_file = "http://rnr.h-its.org/rnr/jobs/#{@jobid}/config_file"
+    Rails.logger.info( "#{@jobid}: tree_file at #{tree_file}")
+    Rails.logger.info( "#{@jobid}: config_file at #{config_file}")
+
+#     file = File.open("/rnr/jobs/#{@jobid}/display_tree.xml", "w")
+
+    fileA = File.join( jobPath, "display_tree.xml")
+    fileB = File.join( jobPath, "config_file")
+    
+    File.chmod( 0755, fileA ) 
+    File.chmod( 0755, fileB ) 
+    File.chmod( 0755, jobPath)
+#     file = File.new("/rnr/jobs/#{@jobid}/config_file", "w")
+#     File.chmod(0755, "/rnr/jobs/#{@jobid}/config_file")
+
+#     File.chmod(755, tree_file)
+#     File.chmod(755, config_file)
+    
+    # call tree viewer  
+    result = "\n<SCRIPT> $(document).ready(function(){openWin('#{tree_file}','#{config_file}');});</SCRIPT>\n"
+    Rails.logger.info( "#{@jobid}: result #{result}")
 
     return result
   end
@@ -288,9 +289,11 @@ class RoguenarokController < ApplicationController
     jobtype = params[:jobtype]
     @job = nil    
     
+    Rails.logger.info( "initializeTreeViewer")
     @loadTreeViewer = initializeTreeViewer(params)
     
     ### Taxa Analysis
+    Rails.logger.info( "#{@jobid} jobtype: #{jobtype}")
     case jobtype 
     when "analysis"
       updateCheckedTaxa(@jobid, [])
@@ -947,8 +950,6 @@ class RoguenarokController < ApplicationController
   end
 
   def prepareForTaxaTable(jobid)
-    logger.warn "\n\ntrying to find everything"
-
     search = Search.find(:first, :conditions => {:jobid => jobid, :name => "dummy"})
     taxa = Taxon.find(:all, :conditions => {:roguenarok_id => jobid,  :search_id => search.id}) 
     
