@@ -71,7 +71,7 @@ class RoguenarokController < ApplicationController
 
     @job = Roguenarok.new({:jobid => jobid, :user_id => @user.id, :description => description, :bootstrap_tree_set => bootstrap_treeset_file, :tree => best_known_tree_file , :excluded_taxa => taxa_to_exclude_file})  
     buildJobDir(jobid)
-    if @job.valid?  && @user.errors.size < 1
+    if @job.valid? && @user.errors.size < 1
       @job.save
       @user.update_attribute(:saved_subs, @user.saved_subs+1)
       @user.update_attribute(:all_subs, @user.all_subs+1)
@@ -275,8 +275,14 @@ class RoguenarokController < ApplicationController
   def work
     @jobid = params[:jobid]
 
-    job_path = File.join(RAILS_ROOT,"public","jobs",@jobid)
-    path     = File.join(job_path,"results")
+    # check if job with this id exists
+    rog = Roguenarok.find(:first, :conditions => {:jobid => @jobid})
+    if rog == nil
+      raise ActionController::RoutingError.new('job not found')
+    end
+
+    job_path = File.join( RAILS_ROOT, "public", "jobs", @jobid)
+    path     = File.join( job_path  , "results")
 
     #### CHECK WHICH SUBMISSION HAS TO BE PERFORMED    
     jobtype = params[:jobtype]
@@ -1050,7 +1056,6 @@ class RoguenarokController < ApplicationController
     end
   end
 
-  
   # maps a score to 3 rgb values 
   def scoreToColor(score, minVal, maxVal)
     maxColor = 230.0
@@ -1060,9 +1065,13 @@ class RoguenarokController < ApplicationController
     return [minColor, norm, norm]
   end
 
-
   def jobIsFinished?(jobid)
-    rog = Roguenarok.find(:first, :conditions => {:jobid => jobid}) 
+    # find the job
+    rog = Roguenarok.find(:first, :conditions => {:jobid => jobid})
+    if rog == nil
+      raise ActionController::RoutingError.new('job not found')
+    end
+    
     path = File.join( RAILS_ROOT, "public", "jobs", jobid)
     
     Dir.glob( File.join( path, "current.log")){|file|
