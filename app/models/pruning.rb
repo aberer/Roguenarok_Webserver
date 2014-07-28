@@ -148,15 +148,18 @@ attr_accessor :jobid, :threshold, :user_def, :display_path
 
     command_rnr_prune = File.join(RAILS_ROOT,"bioprogs","roguenarok","rnr-prune")
 
-    command_update_working_files_after_pruning = "cp #{pruned_bts_file } #{bootstrap_treeset_file}\n cp #{pruned_best_tree_file } #{best_tree_file};"
+    command_update_working_files_after_pruning  = "cp #{pruned_bts_file } #{bootstrap_treeset_file}\n"
+    command_update_working_files_after_pruning += "cp #{pruned_best_tree_file } #{best_tree_file}\n"
 
     command_raxml = File.join(RAILS_ROOT,"bioprogs","raxml","raxmlHPC-SSE3")
 
-    command_update_working_files_after_raxml = "cp #{raxml_tree_file } #{current_tree_file}\n cp #{raxml_best_tree_file } #{current_tree_file};"
+    command_update_working_files_after_raxml  = "cp #{raxml_tree_file} #{current_tree_file}\n"
+    command_update_working_files_after_raxml += "cp #{raxml_best_tree_file } #{current_tree_file}\n"
 
     resultfiles_rnr = File.join(path,"RnR*")
     resultfiles_raxml = File.join(path,"RAxML*")
-    command_save_result_files="mv #{resultfiles_raxml} #{results_path}\n mv #{resultfiles_rnr} #{results_path}"
+    command_save_result_files  = "mv #{resultfiles_raxml} #{results_path}\n"
+    command_save_result_files += "mv #{resultfiles_rnr} #{results_path}"
 
     opts_rnr_prune.each_key {|k| command_rnr_prune  = command_rnr_prune+" "+k+" #{opts_rnr_prune[k]} "}
     opts_raxml.each_key {|k| command_raxml  = command_raxml+" "+k+" #{opts_raxml[k]} "}

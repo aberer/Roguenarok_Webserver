@@ -201,7 +201,7 @@ class RoguenarokController < ApplicationController
       system "java -cp #{RAILS_ROOT}/bioprogs/java/forester.jar org.forester.application.phyloxml_converter -f=nn #{jobPath}/display_tree  #{jobPath}/display_tree.xml"
       
       system "tr -d '\n' < #{jobPath}/display_tree.xml | sed 's/>[ ]*</></g' > #{jobPath}/tmp"
-      system " mv #{jobPath}/tmp #{jobPath}/display_tree.xml"
+      system "mv #{jobPath}/tmp #{jobPath}/display_tree.xml"
 
       annotatePhyFile(File.join(jobPath,"display_tree.xml"),File.join(jobPath,"phyloNames"))
 
