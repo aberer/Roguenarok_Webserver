@@ -133,7 +133,7 @@ attr_accessor :jobid, :threshold, :user_def, :display_path
     # BUILD COMMAND SHELL FILE FOR QSUB
     shell_file = File.join(RAILS_ROOT,"public","jobs",self.jobid,"submit.sh")
     prune = File.join(RAILS_ROOT,"bioprogs","roguenarok","rnr-prune")
-    raxml = File.join(RAILS_ROOT,"bioprogs","raxml","raxmlHPC-SSE3")
+    raxml = File.join(RAILS_ROOT,"bioprogs","RAxML","raxmlHPC-SSE3")
 
     command_create_results_folder = "mkdir -p #{results_path}"
     system command_create_results_folder
@@ -151,7 +151,7 @@ attr_accessor :jobid, :threshold, :user_def, :display_path
     command_update_working_files_after_pruning  = "cp #{pruned_bts_file } #{bootstrap_treeset_file}\n"
     command_update_working_files_after_pruning += "cp #{pruned_best_tree_file } #{best_tree_file}\n"
 
-    command_raxml = File.join(RAILS_ROOT,"bioprogs","raxml","raxmlHPC-SSE3")
+    command_raxml = File.join(RAILS_ROOT,"bioprogs","RAxML","raxmlHPC-SSE3")
 
     command_update_working_files_after_raxml  = "cp #{raxml_tree_file} #{current_tree_file}\n"
     command_update_working_files_after_raxml += "cp #{raxml_best_tree_file } #{current_tree_file}\n"
