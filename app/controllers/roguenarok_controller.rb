@@ -208,7 +208,7 @@ class RoguenarokController < ApplicationController
     annotatePhyFile(File.join(jobPath,"display_tree.xml"),File.join(jobPath,"phyloNames"))
 
 
-    system "cp #{RAILS_ROOT}/public/config_file #{jobPath}" 
+    system "cp #{RAILS_ROOT}/public/applets/config_file #{jobPath}" 
     confFileHandle = File.open("#{jobPath}/config_file", "a")
     id = 1
     
