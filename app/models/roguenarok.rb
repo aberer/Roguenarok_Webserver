@@ -29,7 +29,7 @@ class Roguenarok < ActiveRecord::Base
       b = TreeFileParser.new(self.bootstrap_tree_set)
       errors.add(:bootstrap_tree_set, b.error) if !b.valid_format
       if b.valid_format
-        bts_path = jobdir+"bootstrap_treeset_file"
+        bts_path = File.join(jobdir,"bootstrap_treeset_file")
         saveOnDisk(b.data, bts_path)
         self.bootstrap_tree_set = bts_path
         # build taxa file and check if everything worked out
@@ -49,7 +49,7 @@ class Roguenarok < ActiveRecord::Base
       t = TreeFileParser.new(self.tree)
       errors.add(:tree, t.error) if !t.valid_format
       if t.valid_format
-        tree_path = jobdir+"best_tree"
+        tree_path = File.join(jobdir,"best_tree")
         saveOnDisk(t.data, tree_path)
         self.tree = tree_path
       else

@@ -69,7 +69,7 @@ class RoguenarokController < ApplicationController
     #################
     ### save job data & update user submission counter if everything is alright
 
-    @job = Roguenarok.new({:jobid => jobid, :user_id => @user.id, :description => description, :bootstrap_tree_set => bootstrap_treeset_file, :tree => best_known_tree_file , :excluded_taxa => taxa_to_exclude_file})  
+    @job = Roguenarok.new({:jobid => jobid, :user_id => @user.id, :description => description, :bootstrap_tree_set => bootstrap_treeset_file, :tree => best_known_tree_file , :excluded_taxa => taxa_to_exclude_file})
     buildJobDir(jobid)
     if @job.valid? && @user.errors.size < 1
       @job.save
