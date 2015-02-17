@@ -188,7 +188,7 @@ class RoguenarokController < ApplicationController
       return result
     end
 
-    jobPath = File.join( RAILS_ROOT, "public", "jobs", @jobid)
+    jobPath = getJobDir( @jobid)
 
     # remove duplicate file 
     deleteSuperfluousFiles( File.join( jobPath, "display") )
@@ -219,7 +219,7 @@ class RoguenarokController < ApplicationController
         taxon.chomp!
         
         tmp = id.to_s.rjust(8, "0")
-        confFileHandle.write("species_color: #{tmp} 0xFF0000\n")          
+        confFileHandle.write("species_color: #{tmp} 0xFF0000\n")
 
         system "sed 's/\\(<name>#{taxon}<\\/name><branch_length>[0-9\\.]*<\\/branch_length>\\)/\\1<taxonomy><code>#{tmp}<\\/code><\\/taxonomy>/g' #{jobPath}/display_tree.xml > #{jobPath}/tmp"
         system "mv #{jobPath}/tmp #{jobPath}/display_tree.xml" 
@@ -238,13 +238,13 @@ class RoguenarokController < ApplicationController
     end
     confFileHandle.close()
 
-#     tree_file = "http://#{ENV['SERVER_IP']}:8080/rnr/jobs/#{@jobid}/display_tree.xml"      
+#     tree_file = "http://#{ENV['SERVER_IP']}:8080/rnr/jobs/#{@jobid}/display_tree.xml"
 #     config_file = "http://#{ENV['SERVER_IP']}:8080/rnr/jobs/#{@jobid}/config_file"
 
-#     tree_file = "http://#{ENV['SERVER_IP']}/rnr/jobs/#{@jobid}/display_tree.xml"      
+#     tree_file = "http://#{ENV['SERVER_IP']}/rnr/jobs/#{@jobid}/display_tree.xml"
 #     config_file = "http://#{ENV['SERVER_IP']}/rnr/jobs/#{@jobid}/config_file"
 
-    tree_file = "http://rnr.h-its.org/rnr/jobs/#{@jobid}/display_tree.xml"      
+    tree_file = "http://rnr.h-its.org/rnr/jobs/#{@jobid}/display_tree.xml"
     config_file = "http://rnr.h-its.org/rnr/jobs/#{@jobid}/config_file"
     Rails.logger.info( "#{@jobid}: tree_file at #{tree_file}")
     Rails.logger.info( "#{@jobid}: config_file at #{config_file}")
@@ -254,8 +254,8 @@ class RoguenarokController < ApplicationController
     fileA = File.join( jobPath, "display_tree.xml")
     fileB = File.join( jobPath, "config_file")
     
-    File.chmod( 0755, fileA ) 
-    File.chmod( 0755, fileB ) 
+    File.chmod( 0755, fileA )
+    File.chmod( 0755, fileB )
     File.chmod( 0755, jobPath)
 #     file = File.new("/rnr/jobs/#{@jobid}/config_file", "w")
 #     File.chmod(0755, "/rnr/jobs/#{@jobid}/config_file")
@@ -282,7 +282,7 @@ class RoguenarokController < ApplicationController
       raise ActionController::RoutingError.new('job not found')
     end
 
-    job_path = File.join( RAILS_ROOT, "public", "jobs", @jobid)
+    job_path = getJobDir( @jobid)
     path     = File.join( job_path  , "results")
 
     #### CHECK WHICH SUBMISSION HAS TO BE PERFORMED    
@@ -380,7 +380,7 @@ class RoguenarokController < ApplicationController
     @user_def = false
     @user_def_value = nil
     @bipartitions = false
-    @best_tree_available = !File.exists?( File.join( RAILS_ROOT, "public", "jobs", @jobid, "best_tree"))
+    @best_tree_available = !File.exists?( File.join( getJobDir( @jobid), "best_tree"))
 
     ### Initialize Threshold Selection
     if currentSearchName.eql?("") || currentSearchName =~ /_mr_/
@@ -470,7 +470,7 @@ class RoguenarokController < ApplicationController
     exclude_taxa_option =  "<option>#{exclude_taxa}</option>"
     prune_taxa_option = "<option>#{prune_taxa}</option>"
 
-    job = Roguenarok.find(:first, :conditions => {:jobid => @jobid})    
+    job = Roguenarok.find(:first, :conditions => {:jobid => @jobid})
     @isPruning = job.ispruning
 
     if ! @isPruning
@@ -481,13 +481,13 @@ class RoguenarokController < ApplicationController
 
     @tree_manipulation_options = exclude_taxa_option+prune_taxa_option
     
-    ### Initialize Taxa Listing     
-    prepareForTaxaTable(@jobid) 
+    ### Initialize Taxa Listing
+    prepareForTaxaTable(@jobid)
   end
 
-  def updateCheckedTaxa(jobid, list)         
-    s = Search.find(:first, :conditions => {:jobid => jobid, :name => "dummy" })    
-    taxa = Taxon.find(:all, :conditions => {:search_id => s.id})    
+  def updateCheckedTaxa(jobid, list)
+    s = Search.find(:first, :conditions => {:jobid => jobid, :name => "dummy" })
+    taxa = Taxon.find(:all, :conditions => {:search_id => s.id})
     taxa.each do |t| 
       t.update_attribute(:isChecked, list.include?(t.name ))
     end 
@@ -591,7 +591,7 @@ class RoguenarokController < ApplicationController
         end
       end
 
-      updateCheckedTaxa(jobid, list) 
+      updateCheckedTaxa(jobid, list)
       job.execute(link,list)
       r.update_attribute(:display_path, job.getDisplayFileName)
       return nil
@@ -806,7 +806,7 @@ class RoguenarokController < ApplicationController
   end
 
   def allJobs
-    @jobs_email = params[:email].gsub("\'", "")    
+    @jobs_email = params[:email].gsub("\'", "")
 
     user = User.find(:first , :conditions => {:email => @jobs_email})
     @jobids=[]
@@ -824,7 +824,7 @@ class RoguenarokController < ApplicationController
         @jobdescs << r.description.gsub(/__/," ")
       end
       e = r.created_at.to_s 
-      if  e =~ /(\d+)-(\d+)-(\d+)\s*(\d+):(\d+):(\d+)/                 
+      if  e =~ /(\d+)-(\d+)-(\d+)\s*(\d+):(\d+):(\d+)/
         year = $1.to_i
         month = $2.to_i
         day = $3.to_i
@@ -873,7 +873,7 @@ class RoguenarokController < ApplicationController
           
           Taxon.delete_all("roguenarok_id = #{jobid}")
 
-          command = "rm -r " + File.join( RAILS_ROOT, "public", "jobs", jobid)
+          command = "rm -r " + getJobDir(jobid)
           system command
         end
       end
@@ -894,14 +894,9 @@ class RoguenarokController < ApplicationController
     email = params[:contact_email]
     subject = params[:contact_subject]
     subject = subject.gsub(/\s/,"__")
-    subject = subject.gsub(/\"/,"\\\"")
-    subject = subject.gsub(/\'/,"\\\\\'")
     message = params[:contact_message]
     message = message.gsub(/\n/,"#n#")
     message = message.gsub(/\s/,"__")
-    message = message.gsub(/\"/,"\\\"")
-    message = message.gsub(/\'/,"\\\\\'")
-    
     
     if Roguenarok.sendMessage(name,email,subject,message)
       redirect_to :action => "confirmation"
@@ -935,17 +930,26 @@ class RoguenarokController < ApplicationController
     return id
   end
 
+  def getJobDir(jobid)
+    jobs_path = File.join( RAILS_ROOT, "public", "jobs")
+    if not APP_CONFIG['pbs_job_folder'].empty?
+      jobs_path = APP_CONFIG['pbs_job_folder']
+    end
+    path = File.join( jobs_path, jobid)
+    return path
+  end
+
   def buildJobDir(jobid)
-    directory = File.join( RAILS_ROOT, "public", "jobs", jobid)
+    directory = getJobDir(jobid)
     Dir.mkdir(directory) rescue system("rm -r #{directory}; mkdir #{directory}")
 
-    fh = File.open( File.join( RAILS_ROOT, "public", "jobs", jobid, "current.log"), "w")
+    fh = File.open( File.join( directory, "current.log"), "w")
     fh.write("done!")
-    fh.close()    
+    fh.close()
   end
 
   def destroyJobDir(jobid)
-    directory = File.join( RAILS_ROOT, "public", "jobs", jobid)
+    directory = getJobDir(jobid)
     Dir.rmdir(directory) rescue system("rm -r #{directory};")
   end
 
@@ -997,7 +1001,7 @@ class RoguenarokController < ApplicationController
     end     
 
     # sort 
-    job = Roguenarok.find(:first, :conditions => {:jobid => jobid})     
+    job = Roguenarok.find(:first, :conditions => {:jobid => jobid})
     s = Search.find(:first, :conditions => {:id => job.sortedby})
     if ! s.nil?
       @sortedby = s.id
@@ -1073,7 +1077,7 @@ class RoguenarokController < ApplicationController
       raise ActionController::RoutingError.new('job not found')
     end
     
-    path = File.join( RAILS_ROOT, "public", "jobs", jobid)
+    path = getJobDir(jobid)
     
     Dir.glob( File.join( path, "current.log")){|file|
       f = File.open(file,'r')

@@ -6,13 +6,13 @@
 // Call method "openWin( dataurl, configfile )" with something like:
 // <a href='#' onclick="openWin( 'http://path/to/treefile', 'http://path/to/config' )">launch Archaeopteryx</a>
 
-function openWin( dataurl, configfile ) {    
+function openWin( dataurl, configfile ) {
     aptx_window = open( "", "aptx_window", "width=300,height=150,status=no,toolbar=no,menubar=no,resizable=yes" );    
     aptx_window.document.open();
 
-    if ( aptx_window == null ) 
+    if ( aptx_window == null )
     {
-	alert("please allow popups!");	
+        alert("please allow popups!");
     }
     
     // create document
@@ -40,12 +40,6 @@ function openWin( dataurl, configfile ) {
     
     // close the document - (not the window!)
     aptx_window.document.close();
-
-
-
 }
-
-
-
 
 // aptx_window.document.write( " CODEBASE=\"http://path/to/archaeopteryx_applets_jar_directory\"" );

@@ -1,0 +1,16 @@
+defaults: &defaults
+  # pbs related settings
+  pbs_server          : ''
+  pbs_user            : ''
+  pbs_proxy_user      : ''
+  pbs_bioprogs_folder : ''
+  pbs_job_folder      : ''
+
+development:
+  <<: *defaults
+
+test:
+  <<: *defaults
+
+production:
+  <<: *defaults

@@ -5,8 +5,17 @@ class TiiAnalysis < ActiveRecord::Base
     :jobid => "Job ID"
   }
 
+  def getJobDir
+    jobs_path = File.join( RAILS_ROOT, "public", "jobs")
+    if not APP_CONFIG['pbs_job_folder'].empty?
+      jobs_path = APP_CONFIG['pbs_job_folder']
+    end
+    path = File.join( jobs_path, self.jobid)
+    return path
+  end
+
   def execute(link)
-    path                   = File.join( RAILS_ROOT, "public", "jobs", self.jobid)
+    path                   = getJobDir()
     bootstrap_treeset_file = File.join( path, "bootstrap_treeset_file")
     best_tree_file         = File.join( path, "best_tree")
     excluded_taxa_file     = File.join( path, "excluded_taxa")
@@ -15,6 +24,11 @@ class TiiAnalysis < ActiveRecord::Base
     log_out                = File.join( logs_path, "submit.sh.out")
     log_err                = File.join( logs_path, "submit.sh.err")
     
+    if not APP_CONFIG['pbs_server'].empty?
+      log_out = "#{APP_CONFIG['pbs_server']}:#{log_out}"
+      log_err = "#{APP_CONFIG['pbs_server']}:#{log_err}"
+    end
+
     current_logfile = File.join(path,"current.log")
     if File.exists?(current_logfile) 
       system "rm #{current_logfile}"
@@ -37,7 +51,7 @@ class TiiAnalysis < ActiveRecord::Base
 
     # BUILD SHELL FILE FOR QSUB
 
-    shell_file =File.join(RAILS_ROOT,"public","jobs",self.jobid,"submit.sh")
+    shell_file =File.join(getJobDir(),"submit.sh")
 
     command_create_results_folder = "mkdir -p #{results_path}"
     system command_create_results_folder
@@ -75,7 +89,7 @@ class TiiAnalysis < ActiveRecord::Base
   end
 
   def getFile
-    file = File.join( RAILS_ROOT, "public", "jobs", self.jobid, "results", "RnR-tii_taxonomicInstabilityIndex.#{self.jobid}_#{self.id}")
+    file = File.join( getJobDir(), "results", "RnR-tii_taxonomicInstabilityIndex.#{self.jobid}_#{self.id}")
     return file
   end
 

@@ -22,7 +22,7 @@ class Roguenarok < ActiveRecord::Base
 
   ### custom validator function that checks file formats of the uploaded files
   def validate
-    jobdir = "#{RAILS_ROOT}/public/jobs/#{self.jobid}/"
+    jobdir = getJobDir()
 
     #validate bootstrap treeset file
     if ! ( self.bootstrap_tree_set.nil? || self.bootstrap_tree_set.eql?(""))
@@ -33,13 +33,13 @@ class Roguenarok < ActiveRecord::Base
         saveOnDisk(b.data, bts_path)
         self.bootstrap_tree_set = bts_path
         # build taxa file and check if everything worked out
-        self.taxa_file = b.buildTaxaFile(self.jobid, bts_path)        
+        self.taxa_file = b.buildTaxaFile(self.jobid, bts_path)
       else 
-        self.bootstrap_tree_set = ""        
+        self.bootstrap_tree_set = ""
       end
       errors.add(:bootstrap_tree_set, b.error) if !b.valid_format 
       
-      if ! self.bootstrap_tree_set.eql?("") && File.open(self.bootstrap_tree_set, "r").readlines.length <  2
+      if ! self.bootstrap_tree_set.eql?("") && File.open(self.bootstrap_tree_set, "r").readlines.length < 2
         errors.add(:bootstrap_tree_set, "Your bootstrap tree file only contains a single tree.")
       end 
     end
@@ -78,6 +78,15 @@ class Roguenarok < ActiveRecord::Base
     end
   end
 
+  def getJobDir
+    jobs_path = File.join( RAILS_ROOT, "public", "jobs")
+    if not APP_CONFIG['pbs_job_folder'].empty?
+      jobs_path = APP_CONFIG['pbs_job_folder']
+    end
+    path = File.join( jobs_path, self.jobid)
+    return path
+  end
+
   def saveOnDisk(data,path)
     File.open(path,'wb'){|f| f.write(data.join)}
   end
@@ -85,7 +94,7 @@ class Roguenarok < ActiveRecord::Base
   def excludeTaxa(jobid, list)
     ds = Search.find(:first, :conditions => {:jobid => jobid, :name => "dummy"} )
 
-    self.excluded_taxa = File.join( RAILS_ROOT, "public", "jobs", self.jobid, "excluded_taxa")
+    self.excluded_taxa = File.join( getJobDir(), "excluded_taxa")
     list.each do |name|
       t = Taxon.find(:first, :conditions => {:roguenarok_id => jobid, :search_id => ds.id, :name => name.chomp} )
       t.update_attributes(:excluded => 'T')
@@ -103,14 +112,14 @@ class Roguenarok < ActiveRecord::Base
   def includeTaxa(jobid, list)
     ds = Search.find(:first, :conditions => {:jobid => jobid, :name => "dummy"} )
     
-    self.excluded_taxa = File.join(RAILS_ROOT,"public","jobs",self.jobid,"excluded_taxa")    
+    self.excluded_taxa = File.join( getJobDir(),"excluded_taxa")
     list.each do |name|
       t = Taxon.find(:first, :conditions => {:roguenarok_id => jobid, :search_id => ds.id , :name => name.chomp} )
       t.update_attributes(:excluded => 'F')
     end
 
     # update excluded taxa file
-    taxa = Taxon.find(:all, :conditions => {:roguenarok_id => jobid, :search_id => ds.id, :excluded => 'T'} )        
+    taxa = Taxon.find(:all, :conditions => {:roguenarok_id => jobid, :search_id => ds.id, :excluded => 'T'} )
     f = File.open(self.excluded_taxa, 'wb')    
     taxa.each do |taxon|
       f.write(taxon.name+"\n")

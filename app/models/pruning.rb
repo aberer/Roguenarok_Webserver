@@ -1,6 +1,5 @@
 class Pruning < ActiveRecord::Base
-  
-attr_accessor :jobid, :threshold, :user_def, :display_path
+  attr_accessor :jobid, :threshold, :user_def, :display_path
 
   HUMANIZED_ATTRIBUTES = {
     :jobid => "Job ID", :threshold => "Threshold", :user_def => "User defined value"
@@ -23,11 +22,19 @@ attr_accessor :jobid, :threshold, :user_def, :display_path
       end
     end
   end
-  
-  
+
+  def getJobDir
+    jobs_path = File.join( RAILS_ROOT, "public", "jobs")
+    if not APP_CONFIG['pbs_job_folder'].empty?
+      jobs_path = APP_CONFIG['pbs_job_folder']
+    end
+    path = File.join( jobs_path, self.jobid)
+    return path
+  end
+
   def getDisplayFileName 
     numExcluded = "init"
-    pruneFile = File.join([RAILS_ROOT, "public", "jobs", self.jobid, "pruned_taxa"])
+    pruneFile = File.join( getJobDir(), "pruned_taxa")
     if File.exists?(pruneFile)
       fh = File.open(pruneFile,"r")
       num = fh.readlines.length 
@@ -60,7 +67,7 @@ attr_accessor :jobid, :threshold, :user_def, :display_path
 
 
   def execute(link,prune_list)
-    path                   = File.join( RAILS_ROOT, "public", "jobs", self.jobid)
+    path                   = getJobDir()
     bootstrap_treeset_file = File.join( path, "bootstrap_treeset_file")
     best_tree_file         = File.join( path, "best_tree")
     pruned_taxa_file       = File.join( path, "pruned_taxa")
@@ -70,6 +77,11 @@ attr_accessor :jobid, :threshold, :user_def, :display_path
     logs_path              = File.join( path, "logs")
     log_out                = File.join( logs_path, "submit.sh.out")
     log_err                = File.join( logs_path, "submit.sh.err")
+
+    if not APP_CONFIG['pbs_server'].empty?
+      log_out = "#{APP_CONFIG['pbs_server']}:#{log_out}"
+      log_err = "#{APP_CONFIG['pbs_server']}:#{log_err}"
+    end
 
     current_logfile = File.join(path,"current.log")
     if File.exists?(current_logfile) 
@@ -131,7 +143,7 @@ attr_accessor :jobid, :threshold, :user_def, :display_path
     email = user.email
 
     # BUILD COMMAND SHELL FILE FOR QSUB
-    shell_file = File.join(RAILS_ROOT,"public","jobs",self.jobid,"submit.sh")
+    shell_file = File.join(getJobDir(),"submit.sh")
     prune = File.join(RAILS_ROOT,"bioprogs","roguenarok","rnr-prune")
     raxml = File.join(RAILS_ROOT,"bioprogs","RAxML","raxmlHPC-SSE3")
 
