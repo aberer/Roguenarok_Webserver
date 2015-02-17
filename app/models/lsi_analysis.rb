@@ -21,6 +21,14 @@ class LsiAnalysis < ActiveRecord::Base
     return path
   end
 
+  def getBioprogsDir
+    dir = File.join(RAILS_ROOT,"bioprogs")
+    if not APP_CONFIG['pbs_bioprogs_folder'].empty?
+      dir = APP_CONFIG['pbs_bioprogs_folder']
+    end
+    return dir
+  end
+  
   def execute(link)
     path                   = getJobDir()
     bootstrap_treeset_file = File.join(path, "bootstrap_treeset_file")
@@ -68,7 +76,7 @@ class LsiAnalysis < ActiveRecord::Base
 
     command_change_directory = "cd #{path}"
 
-    command_rnr_lsi = File.join(RAILS_ROOT,"bioprogs","roguenarok","rnr-lsi")
+    command_rnr_lsi = File.join(getBioprogsDir(),"roguenarok","rnr-lsi")
     opts.each_key {|k| command_rnr_lsi  = command_rnr_lsi + " " + k + " #{opts[k]} "}
 
     resultfiles = File.join(path,"RnR*")

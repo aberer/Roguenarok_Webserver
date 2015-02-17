@@ -19,6 +19,14 @@ class RogueTaxaAnalysis < ActiveRecord::Base
     return path
   end
 
+  def getBioprogsDir
+    dir = File.join(RAILS_ROOT,"bioprogs")
+    if not APP_CONFIG['pbs_bioprogs_folder'].empty?
+      dir = APP_CONFIG['pbs_bioprogs_folder']
+    end
+    return dir
+  end
+
   def getName
     # result = jobid.to_s
     result = "rnr"
@@ -150,7 +158,7 @@ class RogueTaxaAnalysis < ActiveRecord::Base
 
     command_change_directory = "cd #{path}"
 
-    command_roguenarok = File.join(RAILS_ROOT,"bioprogs","roguenarok","RogueNaRok")
+    command_roguenarok = File.join(getBioprogsDir(),"roguenarok","RogueNaRok")
     opts.each_key {|k| command_roguenarok  = command_roguenarok+" "+k+" #{opts[k]} "}
 
     resultfiles = File.join(path,"RogueNaRok*")

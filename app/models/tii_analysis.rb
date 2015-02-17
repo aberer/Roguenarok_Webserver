@@ -14,6 +14,14 @@ class TiiAnalysis < ActiveRecord::Base
     return path
   end
 
+  def getBioprogsDir
+    dir = File.join(RAILS_ROOT,"bioprogs")
+    if not APP_CONFIG['pbs_bioprogs_folder'].empty?
+      dir = APP_CONFIG['pbs_bioprogs_folder']
+    end
+    return dir
+  end
+
   def execute(link)
     path                   = getJobDir()
     bootstrap_treeset_file = File.join( path, "bootstrap_treeset_file")
@@ -61,7 +69,7 @@ class TiiAnalysis < ActiveRecord::Base
 
     command_change_directory = "cd #{path}"
 
-    command_rnr_tii = File.join(RAILS_ROOT,"bioprogs","roguenarok","rnr-tii")
+    command_rnr_tii = File.join(getBioprogsDir(),"roguenarok","rnr-tii")
     opts.each_key {|k| command_rnr_tii  = command_rnr_tii+" "+k+" #{opts[k]} "}
     
     resultfiles = File.join(path,"RnR*")

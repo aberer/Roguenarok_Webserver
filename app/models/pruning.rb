@@ -32,6 +32,14 @@ class Pruning < ActiveRecord::Base
     return path
   end
 
+  def getBioprogsDir
+    dir = File.join(RAILS_ROOT,"bioprogs")
+    if not APP_CONFIG['pbs_bioprogs_folder'].empty?
+      dir = APP_CONFIG['pbs_bioprogs_folder']
+    end
+    return dir
+  end
+
   def getDisplayFileName 
     numExcluded = "init"
     pruneFile = File.join( getJobDir(), "pruned_taxa")
@@ -144,8 +152,9 @@ class Pruning < ActiveRecord::Base
 
     # BUILD COMMAND SHELL FILE FOR QSUB
     shell_file = File.join(getJobDir(),"submit.sh")
-    prune = File.join(RAILS_ROOT,"bioprogs","roguenarok","rnr-prune")
-    raxml = File.join(RAILS_ROOT,"bioprogs","RAxML","raxmlHPC-SSE3")
+    bioprogs_dir = getBioprogsDir()
+    prune = File.join(bioprogs_dir,"roguenarok","rnr-prune")
+    raxml = File.join(bioprogs_dir,"RAxML","raxmlHPC-SSE3")
 
     command_create_results_folder = "mkdir -p #{results_path}"
     system command_create_results_folder
@@ -158,12 +167,12 @@ class Pruning < ActiveRecord::Base
 		
     command_change_directory = "cd #{path}"
 
-    command_rnr_prune = File.join(RAILS_ROOT,"bioprogs","roguenarok","rnr-prune")
+    command_rnr_prune = File.join(bioprogs_dir,"roguenarok","rnr-prune")
 
     command_update_working_files_after_pruning  = "cp #{pruned_bts_file } #{bootstrap_treeset_file}\n"
     command_update_working_files_after_pruning += "cp #{pruned_best_tree_file } #{best_tree_file}\n"
 
-    command_raxml = File.join(RAILS_ROOT,"bioprogs","RAxML","raxmlHPC-SSE3")
+    command_raxml = File.join(bioprogs_dir,"RAxML","raxmlHPC-SSE3")
 
     command_update_working_files_after_raxml  = "cp #{raxml_tree_file} #{current_tree_file}\n"
     command_update_working_files_after_raxml += "cp #{raxml_best_tree_file } #{current_tree_file}\n"
