@@ -164,7 +164,11 @@ attr_accessor :jobid, :threshold, :user_def, :display_path
     opts_rnr_prune.each_key {|k| command_rnr_prune  = command_rnr_prune+" "+k+" #{opts_rnr_prune[k]} "}
     opts_raxml.each_key {|k| command_raxml  = command_raxml+" "+k+" #{opts_raxml[k]} "}
 
-    File.open(shell_file,'wb'){|file| 
+    File.open(shell_file,'wb', 0664){|file| 
+      file.write("#PBS -S /bin/bash\n")
+      file.write("#PBS -o #{log_out}\n")
+      file.write("#PBS -e #{log_err}\n")
+      file.write("#PBS -W umask=022\n")
       file.write(command_change_directory+"\n")
       file.write(command_rnr_prune+"\n")
       file.write(command_update_working_files_after_pruning+"\n")
@@ -175,7 +179,7 @@ attr_accessor :jobid, :threshold, :user_def, :display_path
     }
 
     # submit shellfile into batch system 
-    qsub_command = "qsub -o #{log_out} -e #{log_err} #{shell_file}"
+    qsub_command = "qsub #{shell_file}"
     system qsub_command
   end
 end

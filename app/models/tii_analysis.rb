@@ -53,7 +53,11 @@ class TiiAnalysis < ActiveRecord::Base
     resultfiles = File.join(path,"RnR*")
     command_save_result_files="mv #{resultfiles} #{results_path}"
 
-    File.open(shell_file,'wb'){|file| 
+    File.open(shell_file,'wb', 0664){|file| 
+      file.write("#PBS -S /bin/bash\n")
+      file.write("#PBS -o #{log_out}\n")
+      file.write("#PBS -e #{log_err}\n")
+      file.write("#PBS -W umask=022\n")
       file.write(command_change_directory+"\n")
       file.write(command_rnr_tii+"\n")
       file.write(command_save_result_files+"\n")
@@ -61,7 +65,7 @@ class TiiAnalysis < ActiveRecord::Base
     }
 
     # submit shellfile into batch system 
-    qsub_command = "qsub -o #{log_out} -e #{log_err} #{shell_file}"
+    qsub_command = "qsub #{shell_file}"
     system qsub_command
   end
 
