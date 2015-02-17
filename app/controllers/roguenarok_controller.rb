@@ -285,7 +285,7 @@ class RoguenarokController < ApplicationController
     job_path = getJobDir( @jobid)
     path     = File.join( job_path  , "results")
 
-    #### CHECK WHICH SUBMISSION HAS TO BE PERFORMED    
+    #### CHECK WHICH SUBMISSION HAS TO BE PERFORMED
     jobtype = params[:jobtype]
     @job = nil    
     

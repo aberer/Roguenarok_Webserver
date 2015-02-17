@@ -23,6 +23,16 @@ attr_reader :format, :valid_format, :error ,:data
   end
 
   private
+  def getJobDir(jobid)
+    jobs_path = File.join( RAILS_ROOT, "public", "jobs")
+    if not APP_CONFIG['pbs_job_folder'].empty?
+      jobs_path = APP_CONFIG['pbs_job_folder']
+    end
+    path = File.join( jobs_path, jobid)
+    return path
+  end
+
+  private
   def checkFormat
     @valid_format = true
     @format = "tree"
@@ -56,7 +66,7 @@ attr_reader :format, :valid_format, :error ,:data
   
   public 
   def buildTaxaFile(jobid, treefile_on_disk)
-    outfile = File.join( RAILS_ROOT, "public", "jobs", jobid, "taxa_file")
+    outfile = File.join( getJobDir(jobid), "taxa_file")
     cmd = "java -jar " + File.join( RAILS_ROOT, "bioprogs", "java", "extract_tree_taxa.jar") + " #{treefile_on_disk} #{outfile}"
     PTY.spawn(cmd) do |stdin, stdout, pid| 
       
