@@ -89,10 +89,10 @@ class RoguenarokController < ApplicationController
       dummySearch.save 
       taxa = File.open(@job.taxa_file, 'rb').readlines
 
-      taxa.sort! {|x,y| x <=> y} 
+      taxa.sort! {|x,y| x <=> y}
 
       cnt = 1 
-      taxa.each do |t|        
+      taxa.each do |t|
         taxon = Taxon.new({:roguenarok_id => jobid, :name => t.chomp!, :search_id => dummySearch.id, :pos => cnt})
         cnt += 1 
         taxon.save
@@ -171,7 +171,7 @@ class RoguenarokController < ApplicationController
     end  
   end
   
-  def getIdFromButton(params)    
+  def getIdFromButton(params)
     theSearch = params.keys.select{ |k| k =~ /[\._]x/}[0]
     myMatch = theSearch.match(/.+@([0-9]+).[xy]/)
     
@@ -195,7 +195,7 @@ class RoguenarokController < ApplicationController
     
     # concatenate all trees  
     Rails.logger.info( "#{@jobid}: concatenate all trees to #{jobPath}/display_tree and add list to #{jobPath}/phyloNames")
-    system "cat $(ls -tr #{jobPath}/display/*) | head -n 10  > #{jobPath}/display_tree"
+    system "cat $(ls -tr #{jobPath}/display/*) | head -n 10 > #{jobPath}/display_tree"
     system "ls -tr #{jobPath}/display/ > #{jobPath}/phyloNames"
     
     Rails.logger.info( "#{@jobid}: preparing #{jobPath}/display_tree.xml")
@@ -283,7 +283,7 @@ class RoguenarokController < ApplicationController
     end
 
     job_path = getJobDir( @jobid)
-    path     = File.join( job_path  , "results")
+    path     = File.join( job_path , "results")
 
     #### CHECK WHICH SUBMISSION HAS TO BE PERFORMED
     jobtype = params[:jobtype]
@@ -310,7 +310,7 @@ class RoguenarokController < ApplicationController
         currentJob.update_attribute(:filetoparse, tmp[:fileName])
         
         if tmp.has_key?(:mode)  # for lsi 
-          currentJob.update_attribute(:modes, tmp[:mode].join(",")) 
+          currentJob.update_attribute(:modes, tmp[:mode].join(","))
         end
         redirect_to :action => 'wait', :jobid => @jobid
       else        
@@ -333,10 +333,10 @@ class RoguenarokController < ApplicationController
       if params.keys.any? { |k| k =~ /sortSearch@dummy/ }
         s = Search.find(:first, :conditions => {:jobid => @jobid, :name => "dummy"})
 
-        job.update_attribute(:sortedby, s.id )         
+        job.update_attribute(:sortedby, s.id )
       elsif params.keys.any?{|k| k=~ /sortSearch/}
         theSearch = getIdFromButton(params)
-        job.update_attribute(:sortedby,  theSearch) 
+        job.update_attribute(:sortedby,  theSearch)
       end
       
       if params.keys.any?{ |k| k =~ /deleteSearch/ }
@@ -431,10 +431,10 @@ class RoguenarokController < ApplicationController
     if File.exists?(File.join(job_path,"current_tree"))
       @current_tree = File.open(File.join(job_path,"current_tree"),'r').readlines.join
       
-      @curTreeInfo = calculateRbic(File.join(["#{job_path}", "current_tree"]), 
-                                   File.open("#{job_path}/pruned_taxa", "r").readlines.length, 
+      @curTreeInfo = calculateRbic(File.join(["#{job_path}", "current_tree"]),
+                                   File.open("#{job_path}/pruned_taxa", "r").readlines.length,
                                    File.open("#{job_path}/taxa_file", "r").readlines.length
-                                   )
+                                  )
     end
 
     # generate table of excluded taxa 
@@ -678,17 +678,14 @@ class RoguenarokController < ApplicationController
 
     numBip = tree.scan(/\[(\d+)\]/).map{|v| v[0]}.length
     
-    result /= (100 * (numberOfTaxa - 3 )  )
+    result /= (100 * (numberOfTaxa - 3 ) )
     logger.warn "\n\n" +  result.to_s
     
-    result = sprintf("%0.3f", result)   
+    result = sprintf("%0.3f", result)
 
-    possible = numberOfTaxa - 3 
+    possible = numberOfTaxa - 3
     
     return [numberExcluded, numBip, possible, result]
-#     return "excluded: #{numberExcluded}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;\
-# #bipartitions: #{numBip}/#{possible}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;\
-# RBIC: #{result}"  
   end
 
 
@@ -698,7 +695,7 @@ class RoguenarokController < ApplicationController
 
     if !(jobIsFinished?(@jobid))
       render :action => 'wait' ,:jobid => @jobid
-    else      
+    else
       job = Roguenarok.find(:first, :conditions =>{:jobid => @jobid})
       
       fileName = job.filetoparse
@@ -744,9 +741,9 @@ class RoguenarokController < ApplicationController
         end 
       end
       
-      # sort by the search, we last parsed        
+      # sort by the search, we last parsed
       if searchWasParsed
-        job.update_attribute(:sortedby,  @sortedby) 
+        job.update_attribute(:sortedby,  @sortedby)
         job.update_attribute(:filetoparse, nil)
         job.update_attribute(:searchname, nil)
         job.update_attribute(:modes, nil) 
@@ -758,8 +755,8 @@ class RoguenarokController < ApplicationController
         redirect_to :action => 'work', :jobid => @jobid, :display => "true"
       else
         redirect_to :action => 'work', :jobid => @jobid
-      end      
-      
+      end
+
     end
   end
 
@@ -918,7 +915,7 @@ class RoguenarokController < ApplicationController
   end
 
   def generateJobID
-    id = "#{rand(9)}#{rand(9)}#{rand(9)}#{rand(9)}#{rand(9)}#{rand(9)}#{rand(9)}#{rand(9)}#{rand(9)}#{rand(9)}#{rand(9)}#{rand(9)}#{rand(9)}#{rand(9)}#{rand(9)}#{rand(9)}#{rand(9)}#{rand(9)}"	
+    id = "#{rand(9)}#{rand(9)}#{rand(9)}#{rand(9)}#{rand(9)}#{rand(9)}#{rand(9)}#{rand(9)}#{rand(9)}#{rand(9)}#{rand(9)}#{rand(9)}#{rand(9)}#{rand(9)}#{rand(9)}#{rand(9)}#{rand(9)}#{rand(9)}"
     searching_for_valid_id = true
     while searching_for_valid_id
       r = Roguenarok.find(:first, :conditions => {:jobid => id})
@@ -994,7 +991,7 @@ class RoguenarokController < ApplicationController
 
         end
 
-        # add score and dropset data   
+        # add score and dropset data
         @allSearchData.push(asHash)
         @dropsetData.push(dropsets) 
       end
@@ -1052,8 +1049,8 @@ class RoguenarokController < ApplicationController
               score = - score
             end
 
-            col = scoreToColor(score , minVal,maxVal) 
-            colsHere[t] = col 
+            col = scoreToColor(score , minVal,maxVal)
+            colsHere[t] = col
           end
         end
       end
@@ -1065,8 +1062,8 @@ class RoguenarokController < ApplicationController
   def scoreToColor(score, minVal, maxVal)
     maxColor = 230.0
     minColor = 10.0
-    norm = (((score.to_f - minVal ) / (maxVal - minVal ) )  * (maxColor - minColor)) + minColor    
-    norm = [maxColor, norm].min    
+    norm = (((score.to_f - minVal ) / (maxVal - minVal ) )  * (maxColor - minColor)) + minColor
+    norm = [maxColor, norm].min
     return [minColor, norm, norm]
   end
 
