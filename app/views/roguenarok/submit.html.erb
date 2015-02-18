@@ -2,7 +2,7 @@
   <h2>Submit Job</h2> 
 </p>
 <pre>
-<%= error_messages_for  :job, :user , :header_message => "#{@job.errors.size+ @user.errors.size} error(s) occurred in your input!"%>
+<%= error_messages_for :job, :user , :header_message => "#{@job.errors.size+ @user.errors.size} error(s) occurred in your input!"%>
 </pre>
 
 <p>
@@ -13,13 +13,11 @@
     <li> allow pop-ups for this site (usually your browser will offer this) </li>
   </ul>
   Otherwise, tree visualization will not work (however, you still can search for rogue taxa). 
-  
 </p>
 
 <p>
-<font color="red"><b>The upload may take a while.</b></font>
+  <font color="red"><b>The upload may take a while.</b></font>
 </p>
-
 
 <p>
   <h3>Input Files</h3>
@@ -28,42 +26,42 @@
 <div class="separator_bottom">
   &nbsp;
 </div>
+
 <% form_tag({:action => 'upload'},:multipart => true) do %>
-<table cellspacing="8">
-  <tr class="help"  title="upload file with bootstrap trees<br/> (one tree per line, <b>Newick</b> format)">
-    <td   align="right"  ><label for="bootstrap_tree_set">Bootstrap Tree Set:</label></td>
-    <td><%= file_field 'bootstrap_tree_set', 'file', :title => ''  %></td>
-  </tr>
-  </span>
-  <tr  title="<em>optional:</em> file containing a single ML/MP tree (<b>Newick</b> format, presumably with branch lengths). <br/>If uploaded, you can identify rogues that affect the branch support in this tree." class="help">
-    <td align="right"><label for="best_known_tree">Best Known Tree (optional):</label></td>
-    <td><%= file_field 'best_known_tree', 'file' %></td>
-  </tr>
-  <tr  title="<em>optional:</em> file containing taxa (one per line) that you do not want to prune from your phylogeny." class="help">
-    <td align="right"><label for="taxa_to_exclude">Ignored Taxa (optional):</label></td>
-    <td><%= file_field 'taxa_to_exclude', 'file' %></td>
-  </tr>
-  <tr  title="<em>optional:</em> a description of your job. <br/>Helps, if you want to resume your session later." class="help">
-    <td align="right" valign="top"><label for="description">Job Description:</label></td>
-    <td><%= text_area_tag 'description', nil,  :size=>"52x3"%></td>
-  </tr>
-  <tr  title="<em>optional:</em> your email address.<br/>Facilitates looking up jobs." class="help">
-    <td align="right"><label for="email">Email Address:</label></td>
-    <td align="left"><%= text_field 'email', 'email_address' %></td>
-  </tr>
-  <tr>
-    <td align="left" ><p>&nbsp;</p></td>
-    <td align="left" valign="top"><%= submit_tag 'Upload', :name=>'upload' %></td>
-  </tr>
-</table>
+  <table cellspacing="8">
+    <tr class="help"  title="upload file with bootstrap trees<br/> (one tree per line, <b>Newick</b> format)">
+      <td   align="right"  ><label for="bootstrap_tree_set">Bootstrap Tree Set:</label></td>
+      <td><%= file_field 'bootstrap_tree_set', 'file', :title => ''  %></td>
+    </tr>
+    </span>
+    <tr  title="<em>optional:</em> file containing a single ML/MP tree (<b>Newick</b> format, presumably with branch lengths). <br/>If uploaded, you can identify rogues that affect the branch support in this tree." class="help">
+      <td align="right"><label for="best_known_tree">Best Known Tree (optional):</label></td>
+      <td><%= file_field 'best_known_tree', 'file' %></td>
+    </tr>
+    <tr  title="<em>optional:</em> file containing taxa (one per line) that you do not want to prune from your phylogeny." class="help">
+      <td align="right"><label for="taxa_to_exclude">Ignored Taxa (optional):</label></td>
+      <td><%= file_field 'taxa_to_exclude', 'file' %></td>
+    </tr>
+    <tr  title="<em>optional:</em> a description of your job. <br/>Helps, if you want to resume your session later." class="help">
+      <td align="right" valign="top"><label for="description">Job Description:</label></td>
+      <td><%= text_area_tag 'description', nil,  :size=>"52x3"%></td>
+    </tr>
+    <tr  title="<em>optional:</em> your email address.<br/>Facilitates looking up jobs." class="help">
+      <td align="right"><label for="email">Email Address:</label></td>
+      <td align="left"><%= text_field 'email', 'email_address' %></td>
+    </tr>
+    <tr>
+      <td align="left" ><p>&nbsp;</p></td>
+      <td align="left" valign="top"><%= submit_tag 'Upload', :name=>'upload' %></td>
+    </tr>
+  </table>
 <% end%>
 
 <noscript>
-  <h2 style="background-color:red;" >
-    <center>For visualization of trees, please allow <b>javascript, java</b> and <b>pop-ups</b> for this site.  </center>
+  <h2 style="background-color:red;text-align:center">
+    For visualization of trees, please allow <b>javascript, java</b> and <b>pop-ups</b> for this site.
   </h2>
 </noscript>
-
 
 <p><h3>Datasets for Testing </h3></p>
 <div class="separator_bottom">

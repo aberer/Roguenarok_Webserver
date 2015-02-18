@@ -10,28 +10,28 @@
   &nbsp;
 </div>
 <% form_tag({:action => 'sendMessage'},:multipart => true) do %>
-<table>
-  <tr>
-    <td align="right"> Name:</td>
-    <td align="left">  <%= text_field_tag 'contact_name',nil,  :size=>50 %> </td>
-  </tr>
-  <tr>
-    <td align="right"> Email:</td>
-    <td align="left" > <%= text_field_tag 'contact_email',nil, :size=>50 %> </td>
-  </tr>
-  <tr>
-    <td align="right"> Subject:</td> 
-    <td align="left">  <%= text_field_tag 'contact_subject',nil,  :size =>50 %></td>
-  </tr>
-  <tr>
-    <td align="right" valign="top"> Message:</td>
-    <td align="left">  <%= text_area_tag 'contact_message', nil, :size => "60x15"%></td>
-  </tr>
-  <tr>
-    <td align="left"><p>&nbsp;</p></td>
-    <td align="left" valign="top"><%= submit_tag 'Send', :name=>'send' %></td>
-  </tr>
-</table>
+  <table>
+    <tr>
+      <td align="right"> Name:</td>
+      <td align="left">  <%= text_field_tag 'contact_name',nil, :size=>50 %> </td>
+    </tr>
+    <tr>
+      <td align="right"> Email:</td>
+      <td align="left" > <%= text_field_tag 'contact_email',nil, :size=>50 %> </td>
+    </tr>
+    <tr>
+      <td align="right"> Subject:</td> 
+      <td align="left">  <%= text_field_tag 'contact_subject',nil,  :size =>50 %></td>
+    </tr>
+    <tr>
+      <td align="right" valign="top"> Message:</td>
+      <td align="left">  <%= text_area_tag 'contact_message', nil, :size => "60x15"%></td>
+    </tr>
+    <tr>
+      <td align="left"><p>&nbsp;</p></td>
+      <td align="left" valign="top"><%= submit_tag 'Send', :name=>'send' %></td>
+    </tr>
+  </table>
 <% end%>
 
 <div class="separator_bottom">

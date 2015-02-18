@@ -1,34 +1,33 @@
 <% form_tag({:action => 'deleteJobs'},:multipart => true) do %>
-<div style="display:none">
-  <%= check_box("email", "email", {}, checked_value=@jobs_email, unchecked_value=@jobs_email)%>
-</div>
-<div > 
-  <table  width="650px">
-    <tr id="table_header">
-      <td></td>
-      <td><b>Job ID</b></td>
-      <td><b>Description</b></td>
-      <td white-space: nowrap><b>Expires in:</b></td>
-    </tr>
-    
-    <p> &nbsp; 
-    <p> &nbsp;  
-
-    <% @jobids.each_index do |i| %>
-    <% if (i % 2 == 0) ; col = "#e1dded" ; else col = "#ffe0c2" ; end %>
-    <tr id =<%=i%> bgcolor=<%= col %> >      
-      <td><input type="checkbox" id="<%="job_#{i}"%>" name="<%="job[#{i}]"%>" value="<%=@jobids[i]%>"/></td>
-      <td><%= link_to @jobids[i], :action => 'wait', :jobid => @jobids[i]%></td>
-      <td width="500px"><%= @jobdescs[i] %></td>
-      <td width="70px"><%= @time_left[i]%></td>
-    </tr>
-    <script type="text/javascript">isEven(<%=i%>)</script>
-    <% end %>
-  </table>
-  
-  <div id="submit_button">
-    <%= submit_tag "Delete" , :name=>'delete'%>
+  <div style="display:none">
+    <%= check_box("email", "email", {}, checked_value=@jobs_email, unchecked_value=@jobs_email)%>
   </div>
-</div>
-
+  <div > 
+    <table  width="650px">
+      <tr id="table_header">
+        <td></td>
+        <td><b>Job ID</b></td>
+        <td><b>Description</b></td>
+        <td white-space: nowrap><b>Expires in:</b></td>
+      </tr>
+      
+      <p> &nbsp;</p>
+      <p> &nbsp;</p>
+  
+      <% @jobids.each_index do |i| %>
+        <% if (i % 2 == 0) ; col = "#e1dded" ; else col = "#ffe0c2" ; end %>
+        <tr id =<%=i%> bgcolor=<%= col %> >
+          <td><input type="checkbox" id="<%="job_#{i}"%>" name="<%="job[#{i}]"%>" value="<%=@jobids[i]%>"/></td>
+          <td><%= link_to @jobids[i], :action => 'wait', :jobid => @jobids[i]%></td>
+          <td width="500px"><%= @jobdescs[i]%></td>
+          <td width="70px"><%= @time_left[i]%></td>
+        </tr>
+        <script type="text/javascript">isEven(<%=i%>)</script>
+      <% end %>
+    </table>
+    
+    <div id="submit_button">
+      <%= submit_tag "Delete" , :name=>'delete'%>
+    </div>
+  </div>
 <% end %>

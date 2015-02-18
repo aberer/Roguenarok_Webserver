@@ -1,35 +1,35 @@
 <noscript>
-  <h2 style="background-color:red;" >
-    <center>For visualization of trees, please allow <b>javascript, java</b> and <b>pop-ups</b> for this site.  </center>
+  <h2 style="background-color:red;text-align:center">
+    For visualization of trees, please allow <b>javascript, java</b> and <b>pop-ups</b> for this site.
   </h2>
-</noscript>  
-<table  >
-  <tr valign=top> 
-    <td colspan="4" valign="middle">    
+</noscript>
+<table>
+  <tr valign="top"> 
+    <td colspan="4" valign="middle">
       <h2> Workflow</h2>
       <p>
-	<ol>
-	  <li> <em>right:</em> select important taxa you do not want to prune (use <em>ignore</em> button) </li>
-	  <li> <em>left:</em> choose/configure rogue search algorithm </li>	
-	  <li> <em>right:</em> select rogues for pruning and visualize the result tree<br/> (opens a pop-up) </li> 	
-	</ol>      
+        <ol>
+          <li> <em>right:</em> select important taxa you do not want to prune (use <em>ignore</em> button) </li>
+          <li> <em>left:</em> choose/configure rogue search algorithm </li>
+          <li> <em>right:</em> select rogues for pruning and visualize the result tree<br/> (opens a pop-up) </li>
+        </ol>
       </p>
 
-      <p><b>Note:</b> for RogueNaRok searches it is important that you prune all preceeding rogues in the list. 
-	Use <%= image_tag "up.png" %> for sorting and <%= image_tag "right.png"%></img> for selecting all rogues from top to specified taxon.  
-    </td>   
-
+      <p>
+        <b>Note:</b> for RogueNaRok searches it is important that you prune all preceeding rogues in the list.
+        Use <%= image_tag "up.png" %> for sorting and <%= image_tag "right.png"%> for selecting all rogues from top to specified taxon.
+      </p>
+    </td>
 
     <td valign="middle" colspan="1">
-      <p align="right"><b><i>JobID:</i></b> <%= @jobid %> </p>
-      <p align="right"><b><i>Description:</i></b> <%= @description %></p>
+      <p style="text-align:right;"><b><i>JobID:</i></b> <%= @jobid %> </p>
+      <p style="text-align:right;"><b><i>Description:</i></b> <%= @description %></p>
       
-      <% if ! @job.nil? %>      
-      <pre><%= error_messages_for  :job , :header_message => "#{@job.errors.size} error(s) occurred in your input!"%></pre>
+      <% if ! @job.nil? %>
+      <pre><%= error_messages_for :job , :header_message => "#{@job.errors.size} error(s) occurred in your input!"%></pre>
       <% end %> 
     </td >
-
-  </tr>  
+  </tr>
 
   <tr>
     <td colspan="5">
@@ -37,10 +37,10 @@
     </td>
   </tr>
 
-  <tr valign=top>
-    <td >    
+  <tr valign="top">
+    <td >
       <!-- Rogue Taxon Analysis Options -->
-      <p><h3>Configure Rogue Taxon Search</h3></p>      
+      <p><h3>Configure Rogue Taxon Search</h3></p>
       <div class="separator_small">
         &nbsp;
       </div>
@@ -52,7 +52,7 @@
           <td align="right" valign="top" id="roguenarok_threshold" >Threshold:</td>
           <td align="left">
             <ul class="nolist">
-	      <li> <label for="threshold_strict"><%= radio_button_tag  'threshold', 'strict',@strict %>strict consensus (<em>SC</em>)</label> </li>
+              <li> <label for="threshold_strict"><%= radio_button_tag  'threshold', 'strict',@strict %>strict consensus (<em>SC</em>)</label> </li>
               <li><label for="threshold_mr"><%= radio_button_tag 'threshold', 'mr' ,@mr%>majority-rule consensus (<em>MR</em>)</label></li>
               <li><label for="threshold_mre"><%= radio_button_tag 'threshold', 'mre', @mre %>extended majority-rule consensus (<em>MRE</em>)</label> </li>
               <li><label for="threshold_user"><%= radio_button_tag 'threshold', 'user' ,@user_def %>consensus threshold: 49&lt;<%= text_field_tag 'threshold_user_defined' , @user_def_value, :size=>1%>&lt;101 </label> </li>
@@ -80,9 +80,9 @@
         <tr id="lsi_options" >
           <td align="right" valign="top"><p>Options:</p></td>
           <td align="left" >
-            <input id="lsi_dif" name="lsi[dif]" type="checkbox" value="DIF" checked  />DIF</br>
-            <input id="lsi_ent" name="lsi[ent]" type="checkbox" value="ENT"/>ENT</br>
-            <input id="lsi_max" name="lsi[max]" type="checkbox" value="MAX"/>MAX</br>
+            <input id="lsi_dif" name="lsi[dif]" type="checkbox" value="DIF" checked  />DIF<br/>
+            <input id="lsi_ent" name="lsi[ent]" type="checkbox" value="ENT"/>ENT<br/>
+            <input id="lsi_max" name="lsi[max]" type="checkbox" value="MAX"/>MAX<br/>
           </td> 
         </tr>
         
@@ -91,292 +91,270 @@
         <!-- no options -->
         
         <!-- Submission Selection -->
-        <tr>	 
-	  
-          <td align="left">Algorithm:</td>	  
+        <tr>
+          <td align="left">Algorithm:</td>
           <td align="left" valign="top">
             <%= select_tag "taxa_analysis", "#{@taxa_analysis_options}", :onclick => "hideAnalysisOptions('roguenarok_threshold','roguenarok_optimize', 'roguenarok_dropset', 'lsi_options')" %>
-            <%= submit_tag 'Do it!', :name=>'analysis' %></td>
+            <%= submit_tag 'Do it!', :name=>'analysis' %>
+          </td>
         </tr>
         <% end%>
         
         <!-- Excluded Taxa Visualization and Selection -->
-	<% if  @ex_taxa.size > 0 %>
+        <% if  @ex_taxa.size > 0 %>
+          <% form_tag(:action => 'work', :jobid => @jobid, :jobtype => 'include' ,:multipart => true) do %>
+            <tr>
+              <td>
+                <p>&nbsp;</p>
+              </td>
+            </tr>
+          
+            <tr>
+              <td colspan="2">
+                <div class="separator_bottom"></div>
+              </td>
+            </tr>
 
-        <% form_tag(:action => 'work', :jobid => @jobid, :jobtype => 'include' ,:multipart => true) do %>
-
-
-	<tr>	  	  
-	  <td>
-	    <p>  &nbsp; </p>
-	  </td>
-	</tr>
-
-	<tr>	  	  
-	  <td colspan="2">
-	    <div class="separator_bottom">        
-	    </div>
-	  </td>
-	</tr>
-
-
-        <tr title="Taxa, that will not be considered for pruning by RogueNaRok. TII and LSI are calculated after pruning the respective taxa." type="help">
-          <td align="right" valign="top">Ignored taxa:</td>
-          <td>
-            <table>
-              <tr id="table_header" >
-                <td><input type="checkbox" name="checkTaxa" id="selectallex" ></td>
-                <td> Name </td>
-              </tr>
-              <% counter = 0 %>
-              <% for i in 0..@ex_taxa.size-1 do %>
-	      <% if (i % 2 == 0) ; col = "#e1dded" ; else col = "#ffe0c2" ; end %>
-              <tr bgcolor=<%=col%> >
-                <td>
-                  <input id="<%="extaxa_#{counter}"%>" name="<%="extaxa[#{counter}]"%>" type="checkbox"  value="<%=@ex_taxa[i].name%>" class="excludedtaxa" />
-		</td>
-                <% counter = counter+1 %>
-                <td><%= @ex_taxa[i].name %></td>
-              </tr>
-              <% end %>
-            </table>
-          </td>
-        </tr>
-        <tr>
-          <td align="left">&nbsp;</td>
-          <td align="left" valign="top"><%= submit_tag 'Include Selected Taxa', :name=>'includeSeTaxa' %></td>
-        </tr>
-        <% end%>
+            <tr title="Taxa, that will not be considered for pruning by RogueNaRok. TII and LSI are calculated after pruning the respective taxa." type="help">
+              <td align="right" valign="top">Ignored taxa:</td>
+              <td>
+                <table>
+                  <tr id="table_header" >
+                    <td><input type="checkbox" name="checkTaxa" id="selectallex" ></td>
+                    <td> Name </td>
+                  </tr>
+                  <% counter = 0 %>
+                  <% for i in 0..@ex_taxa.size-1 do %>
+                    <% if (i % 2 == 0) ; col = "#e1dded" ; else col = "#ffe0c2" ; end %>
+                    <tr bgcolor=<%=col%> >
+                      <td>
+                        <input id="<%="extaxa_#{counter}"%>" name="<%="extaxa[#{counter}]"%>" type="checkbox"  value="<%=@ex_taxa[i].name%>" class="excludedtaxa" />
+                      </td>
+                      <% counter = counter+1 %>
+                      <td><%= @ex_taxa[i].name %></td>
+                    </tr>
+                  <% end %>
+                </table>
+              </td>
+            </tr>
+            <tr>
+              <td align="left">&nbsp;</td>
+              <td align="left" valign="top"><%= submit_tag 'Include Selected Taxa', :name=>'includeSeTaxa' %></td>
+            </tr>
+          <% end%>
         <% end %>
       </table>
     </td>
     
-    
     <!-- vertical separator -->
-    <td class=vertical>
-    </td>
-
-
+    <td class=vertical></td>
     <td colspan=3>
       <p>
         <h3>  &nbsp;&nbsp;&nbsp;&nbsp; Ignore Taxa in Search / Display (Pruned) Tree</h3>
       </p>
-      <div class="separator_bottom">        
-      </div>
+      <div class="separator_bottom"></div>
       <% form_tag(:action => 'work', :jobtype => 'treeManipulation', :jobid => @jobid, :multipart => true) do %>
-      <table > <!-- border=1   -->
-        <tr omg="help" title="initial tree resp. result tree after pruning">
-          <td align="right" valign="top">Current tree:</td>
-          <td align="left"><%= text_area_tag 'current_tree', @current_tree ,:size=>"50x2"%></td>	  
-        </tr>	
-	<tr>
-	  <td> </td>
-	  <td>
-	    <% if ! @curTreeInfo.nil?  && @curTreeInfo.length > 0%> 
-	    <p >
-	      <table width="100%" style="max-width: 30em;">
-		<tr>		    
-		  <td omg="help" title="number of taxa excluded from current tree"><font color="#DD3333">#excluded: <%= @curTreeInfo[0]%> </font></td>
-		  <td omg="help" title="<b>resolution:</b> number of bipartitions in current tree </br> versus maximum possible number of bipartitions for initial tree" ><font color="#DD3333">#bipartitions: <%= @curTreeInfo[1] %>  / <%= @curTreeInfo[2]%></font></td>
-		  <td omg="help" title="sum of branch support values in current tree <br/> normalized by maximum possible support<br/> for tree with initial set of taxa" ><font color="#DD3333">RBIC: <%=@curTreeInfo[3]%> </font></td>
-		  </tr> 
-	      </table>	      
-	    </p>
-	    <% end %>
-	  </td>
-	</tr>
+        <table > <!-- border=1   -->
+          <tr omg="help" title="initial tree resp. result tree after pruning">
+            <td align="right" valign="top">Current tree:</td>
+            <td align="left"><%= text_area_tag 'current_tree', @current_tree ,:size=>"50x2"%></td>
+          </tr>
+          <tr>
+            <td></td>
+            <td>
+              <% if ! @curTreeInfo.nil?  && @curTreeInfo.length > 0%> 
+                <p>
+                  <table width="100%" style="max-width: 30em;">
+                    <tr>
+                      <td omg="help" title="number of taxa excluded from current tree"><font color="#DD3333">#excluded: <%= @curTreeInfo[0]%> </font></td>
+                      <td omg="help" title="<b>resolution:</b> number of bipartitions in current tree <br/> versus maximum possible number of bipartitions for initial tree" ><font color="#DD3333">#bipartitions: <%= @curTreeInfo[1] %>  / <%= @curTreeInfo[2]%></font></td>
+                      <td omg="help" title="sum of branch support values in current tree <br/> normalized by maximum possible support<br/> for tree with initial set of taxa" ><font color="#DD3333">RBIC: <%=@curTreeInfo[3]%> </font></td>
+                    </tr> 
+                  </table>
+                </p>
+              <% end %>
+            </td>
+          </tr>
         
-        <tr  type="help" title="Select and prune taxa<ol><li>opens an Archaeopteryx applet (enable pop-ups!) </li><li>pruned taxa appear in <b>red</b>, if present in preceeding pruning steps</li><li>pruning no taxa yields the <b>initial</b> starting tree (consensus or best-known tree with branch support)</li></ol>">
-          <td align="right" valign="top" ><div id="prune_threshold_text">Threshold:</div></td>
-          <td align="left"><div id="prune_threshold_options">
-              <ul class="nolist">
-                <li><label for="threshold_prune_strict"><%= radio_button_tag 'threshold_prune', 'strict',@strict %>strict consensus (<em>SC</em>)</label></li>
-                <li><label for="threshold_prune_mr"><%= radio_button_tag 'threshold_prune', 'mr' ,@mr%>majority-rule consensus (<em>MR</em>)</label></li>
-                <li><label for="threshold_prune_mre"><%= radio_button_tag 'threshold_prune', 'mre', @mre %>extended majority-rule consensus (<em>MRE</em>)</label></li>
-                <li><label for="threshold_prune_user"><%= radio_button_tag 'threshold_prune', 'user' ,@user_def %>consensus threshold: 49&lt;<%= text_field_tag 'threshold_prune_user_defined' , @user_def_value, :size=>1%>&lt;101</label></li>
-                <li><label for="threshold_prune_bipartitions"><%= radio_button_tag 'threshold_prune', 'bipartitions' ,@bipartitions, :disabled => @best_tree_available %>support on best tree estimate (tree file required)</label></li>
-            </ul></div>
-          </td>
-        </tr>      
+          <tr type="help" title="Select and prune taxa<ol><li>opens an Archaeopteryx applet (enable pop-ups!) </li><li>pruned taxa appear in <b>red</b>, if present in preceeding pruning steps</li><li>pruning no taxa yields the <b>initial</b> starting tree (consensus or best-known tree with branch support)</li></ol>">
+            <td align="right" valign="top" ><div id="prune_threshold_text">Threshold:</div></td>
+            <td align="left"><div id="prune_threshold_options">
+                <ul class="nolist">
+                  <li><label for="threshold_prune_strict"><%= radio_button_tag 'threshold_prune', 'strict',@strict %>strict consensus (<em>SC</em>)</label></li>
+                  <li><label for="threshold_prune_mr"><%= radio_button_tag 'threshold_prune', 'mr' ,@mr%>majority-rule consensus (<em>MR</em>)</label></li>
+                  <li><label for="threshold_prune_mre"><%= radio_button_tag 'threshold_prune', 'mre', @mre %>extended majority-rule consensus (<em>MRE</em>)</label></li>
+                  <li><label for="threshold_prune_user"><%= radio_button_tag 'threshold_prune', 'user' ,@user_def %>consensus threshold: 49&lt;<%= text_field_tag 'threshold_prune_user_defined' , @user_def_value, :size=>1%>&lt;101</label></li>
+                  <li><label for="threshold_prune_bipartitions"><%= radio_button_tag 'threshold_prune', 'bipartitions' ,@bipartitions, :disabled => @best_tree_available %>support on best tree estimate (tree file required)</label></li>
+              </ul></div>
+            </td>
+          </tr>
         
-        <tr>
-          <td align="left"><p>&nbsp;</p></td>
-          <td align="left" valign="top"> 
-            <%= select_tag "tree_manipulation", "#{@tree_manipulation_options}", :onclick => "hidePruneThresholds('prune_threshold_text', 'prune_threshold_options')" %>
-            <%= submit_tag 'Do it!', :name=>'prune' %></td>
-        </tr>
-	
+          <tr>
+            <td align="left"><p>&nbsp;</p></td>
+            <td align="left" valign="top">
+              <%= select_tag "tree_manipulation", "#{@tree_manipulation_options}", :onclick => "hidePruneThresholds('prune_threshold_text', 'prune_threshold_options')" %>
+              <%= submit_tag 'Do it!', :name=>'prune' %>
+            </td>
+          </tr>
+  
 
-	<td align="right" valign="top">Taxa List:</td>
-	<td>
-	  <table >
-	    <!-- THE SEARCH HEADER -->
-            <tr id="table_header" > 	      
-	      <td></td>
-	      <td><input type="checkbox" id="unselectalltaxa" omg="help" title="uncheck all taxa"></td>
-	      <td> 
-		<% if ! @osId.include?(@sortedby)  %>
-		<%= image_submit_tag("up-selected.png" , :disabled => "true", :name => "sortSearch", :value => "dummy", :class => "image") %> 
-		<% else %>
-		<%= image_submit_tag("up.png" , :name => "sortSearch@dummy", :class => "image", :title => "sort alphabetically" , :omg=>"help") %>  
-		<% end %>
-		Name </td>
-	      
-	      <% for i in 0..(@osName.size-1) %> 
-	      <td white-space: nowrap> 
-		<%= image_submit_tag("save.png", :name => "saveSearch@" + @osId[i].to_s , :class => "image", :title => "download result file" , :omg=>"help") %>
-		<% if @sortedby == @osId[i]  %>
-		<%= image_submit_tag("up-selected.png" , :disabled => "true", :name => "sortSearch", :value => @osId[i] , :class => "image",  :title => "already sorted!", :omg=>"help") %> 
-		<% else %>
-		<%= image_submit_tag("up.png" , :name => "sortSearch@" + @osId[i].to_s, :class => "image", :title => "sort according to search results", :omg=>"help" ) %> 
-		<% end %>
-		
-		<% 
-		   helpText=""
-		   theName = @osName[i]
+          <td align="right" valign="top">Taxa List:</td>
+          <td>
+            <table>
+            <!-- THE SEARCH HEADER -->
+              <tr id="table_header" >
+                <td></td>
+                <td><input type="checkbox" id="unselectalltaxa" omg="help" title="uncheck all taxa"></td>
+                <td> 
+                  <% if ! @osId.include?(@sortedby)  %>
+                    <%= image_submit_tag("up-selected.png" , :disabled => "true", :name => "sortSearch", :value => "dummy", :class => "image") %>
+                  <% else %>
+                    <%= image_submit_tag("up.png" , :name => "sortSearch@dummy", :class => "image", :title => "sort alphabetically" , :omg=>"help") %>
+                  <% end %>
+                  Name
+                </td>
+                <% for i in 0..(@osName.size-1) %>
+                  <td white-space: nowrap> 
+                    <%= image_submit_tag("save.png", :name => "saveSearch@" + @osId[i].to_s , :class => "image", :title => "download result file" , :omg=>"help") %>
+                    <% if @sortedby == @osId[i]  %>
+                      <%= image_submit_tag("up-selected.png" , :disabled => "true", :name => "sortSearch", :value => @osId[i] , :class => "image",  :title => "already sorted!", :omg=>"help") %>
+                    <% else %>
+                      <%= image_submit_tag("up.png" , :name => "sortSearch@" + @osId[i].to_s, :class => "image", :title => "sort according to search results", :omg=>"help" ) %>
+                    <% end %>
+                    <% 
+                      helpText=""
+                      theName = @osName[i]
 
-		   if theName  =~ /rnr_/ 
-		   helpText = "RogueNaRok search based on <ol>"
+                      if theName  =~ /rnr_/
+                        helpText = "RogueNaRok search based on <ol>"
+                        if theName =~ /_mr_/
+                          helpText += "<li>majority-rule consensus threshold</li>"
+                        elsif theName =~ /_mre_/
+                          helpText += "<li>extended majority-rule consensus threshold</li>"
+                        elsif theName =~ /_mle_/
+                          helpText += "<li>bipartition support values on best-known tree</li>"
+                        elsif theName =~ /_strict_/
+                          helpText += "<li>strict consensus threshold</li>"
+                        elsif theName =~ /rnr_(\d+)_/
+                          m = /rnr_(\d+)_/.match(theName)
+                          helpText += "<li>custom consensus threshold " + m[1].to_s + "</li>"
+                        end
 
-		   if theName =~ /_mr_/
-		   helpText += "<li>majority-rule consensus threshold</li>"
-		   elsif theName =~ /_mre_/
-		   helpText += "<li>extended majority-rule consensus threshold</li>" 
-		   elsif theName =~ /_mle_/
-		   helpText += "<li>bipartition support values on best-known tree</li>"
-		   elsif theName =~ /_strict_/
-		   helpText += "<li>strict consensus threshold</li>"
-		   elsif theName =~ /rnr_(\d+)_/  
-		   m = /rnr_(\d+)_/.match(theName)		   
-		   helpText += "<li>custom consensus threshold " + m[1].to_s + "</li>"
-		   end 
-		   
-		   nextPat = /rnr_[^_]+_(\d+)_/
-		   if theName =~ nextPat
-		   m = nextPat.match(theName)
-		   helpText += "<li>maximum dropset size " + m[1].to_s +  "</li>"
-		   end
+                        nextPat = /rnr_[^_]+_(\d+)_/
+                        if theName =~ nextPat
+                          m = nextPat.match(theName)
+                          helpText += "<li>maximum dropset size " + m[1].to_s +  "</li>"
+                        end
 
-		   if theName =~ /_bip$/
-		   helpText += "<li>optimization of number of bipartitions</li>"
-		   elsif theName =~ /_sup$/
-		   helpText += "<li>optimization of overall support</li>"
-		   end
-		   
-		   helpText += "</ol>"
+                        if theName =~ /_bip$/
+                          helpText += "<li>optimization of number of bipartitions</li>"
+                        elsif theName =~ /_sup$/
+                          helpText += "<li>optimization of overall support</li>"
+                        end
 
-		   elsif theName =~ /lsi_.+_max/
-		   helpText = "leaf stability indices <em>(maximum)</em>: frequency of the most frequent quartet, normalized to [0,1]"
- 		   elsif theName =~ /lsi_.+_ent/ 
-		   helpText = "leaf stability indices <em>(entropy)</em>: entropy of quartet frequencies, normalized to [0,1]"
-		   elsif theName =~  /lsi_.+_dif/
-		   helpText = "leaf stability indices <em>(difference)</em>: difference between most frequent and second most frequent quartet, normalized to [0,1]"
-		   elsif theName =~ /tii/
-		   helpText = "taxonomic instability indices"
-		   end
-		   %>
+                        helpText += "</ol>"
+                      elsif theName =~ /lsi_.+_max/
+                        helpText = "leaf stability indices <em>(maximum)</em>: frequency of the most frequent quartet, normalized to [0,1]"
+                      elsif theName =~ /lsi_.+_ent/ 
+                        helpText = "leaf stability indices <em>(entropy)</em>: entropy of quartet frequencies, normalized to [0,1]"
+                      elsif theName =~  /lsi_.+_dif/
+                        helpText = "leaf stability indices <em>(difference)</em>: difference between most frequent and second most frequent quartet, normalized to [0,1]"
+                      elsif theName =~ /tii/
+                        helpText = "taxonomic instability indices"
+                      end
+                    %>
 
-		<span href="#" class="help" type="help" title='<%= helpText%>'  ><%= @osName[i] %> </span>
-		<%= image_submit_tag("close.png", :class => "image", :confirm => "You are deleting the results of this search. Continue?",  :name => "deleteSearch@" +  @osId[i].to_s , :title => "delete search",  :omg =>"help" ) %>
-	      </td>
-	      <% end %>	      
-            </tr>
+                    <span href="#" class="help" type="help" title='<%= helpText%>'  ><%= @osName[i] %> </span>
+                    <%= image_submit_tag("close.png", :class => "image", :confirm => "You are deleting the results of this search. Continue?",  :name => "deleteSearch@" +  @osId[i].to_s , :title => "delete search",  :omg =>"help" ) %>
+                  </td>
+                <% end %>
+              </tr>
             
-	    <!-- THE SEARCH TABLE BODY   --> 
-	    <% for i in 0..(@allTaxa.size-1) %>
-	    <% if (i % 2 == 0) ; col = "#e1dded" ; else col = "#ffe0c2" ; end %>
-	    <tr>
-	      <td bgcolor=<%=col%>>
-            <%= image_tag "right.png", :type => "help", :title => "select from top to here", :class => "multiselect", :onclick =>"checkUntil(#{i});", :onMouseOver => "this.style.cursor='pointer';" %>
-	      </td>
-	      <td bgcolor=<%=col%>>
-		<input type="checkbox"  
-		       <% if @checkedTaxa.include?( @allTaxa[i] ) %> 
-		       checked=yes
-		       <% end %>
-		       id="<%="taxa_#{i}"%>" class="taxonCheck" omg="help" position=<%=i%> name="<%="taxa[#{i}]"%>" value="<%=@allTaxa[i]%>"  title="select taxon" >
-	      </td>
-	      <td  bgcolor=<%=col%>>  		
-		<label for="<%="taxa_#{i}"%>">
-		  <%= if ! @allTaxaExcl.include?(@allTaxa[i]) ; "#{@allTaxa[i]}" ;else "<del>#{@allTaxa[i]}</del>"; end %> </label>
-		</input>
-	      </td>
+              <!-- THE SEARCH TABLE BODY   -->
+              <% for i in 0..(@allTaxa.size-1) %>
+              <% if (i % 2 == 0) ; col = "#e1dded" ; else col = "#ffe0c2" ; end %>
+              <tr>
+                <td bgcolor=<%=col%>>
+                  <%= image_tag "right.png", :type => "help", :title => "select from top to here", :class => "multiselect", :onclick =>"checkUntil(#{i});", :onMouseOver => "this.style.cursor='pointer';" %>
+                </td>
+                <td bgcolor=<%=col%>>
+                  <input type="checkbox"
+                    <% if @checkedTaxa.include?( @allTaxa[i] ) %>
+                     checked=yes
+                   <% end %>
+                   id="<%="taxa_#{i}"%>" class="taxonCheck" omg="help" position=<%=i%> name="<%="taxa[#{i}]"%>" value="<%=@allTaxa[i]%>"  title="select taxon">
+                  </input>
+                </td>
+                <td  bgcolor=<%=col%>>
+                  <label for="<%="taxa_#{i}"%>">
+                    <%= if ! @allTaxaExcl.include?(@allTaxa[i]) ; "#{@allTaxa[i]}" ;else "<del>#{@allTaxa[i]}</del>"; end %>
+                  </label>
+                </td>
 
-	      <!-- search columns here -->
-	      <% for j in  0..(@allSearchData.size-1) %> 
-
-	      <!-- get help text -->
-	      <!-- <%  %> -->	      
-	      <%		 
-		 if @osName[j] =~ /rnr_.*_sup/
-		 helptext="<p>sum of support value improvements for pruning this taxon</p>" 
-		 elsif @osName[j] =~ /rnr_.*_bip/
-		 helptext="<p>number of additional bipartitions</p>" 
-		 elsif @osName[j] =~ /lsi/
-		 helptext="<p>leaf stability index</p>" 
-		 elsif @osName[j] =~ /tii/
-		 helptext="<p>taxonomic instability index</p>" 
-		 end
-		 %>
-
-	      <!-- get coloring   -->
-	      <% if ! @colMod[j].nil? && @colMod[j].has_key?(@allTaxa[i]) 
-		 searchCol= '#' +  @colMod[j][@allTaxa[i]].map{|v| (255 - v.floor).to_s(16).rjust(2,"00") }.join 
-		 else
-		 if i % 2 == 0
-		 searchCol= '#f1f1f1'
-		 else 
-		 searchCol= '#ffffff'
-		 end
-		 end %>
-	      <%  if @dropsetData[j].has_key?(@allTaxa[i]) 
-		  helptext+="<p>this taxon is part of a dropset of #{@dropsetData[j][@allTaxa[i]]}</p>"
-		  end%>
-	      <td align="right"  omg="help" title='<%=helptext%>' bgcolor=<%=searchCol%>> 
-		<%=  @allSearchData[j][@allTaxa[i]] %>	
-		
-		<% if @dropsetData[j].has_key?(@allTaxa[i]) %> 
-		/ <%= @dropsetData[j][@allTaxa[i]]%>
-		<% end %>
-	      </td>
-	      <% end %>
-	    </tr>
-	    <% end %>
-        </td>
+                <!-- search columns here -->
+                <% for j in  0..(@allSearchData.size-1) %>
+                  <!-- get help text -->
+                  <!-- <%  %> -->
+                  <%
+                    if @osName[j] =~ /rnr_.*_sup/
+                      helptext="<p>sum of support value improvements for pruning this taxon</p>"
+                    elsif @osName[j] =~ /rnr_.*_bip/
+                      helptext="<p>number of additional bipartitions</p>" 
+                    elsif @osName[j] =~ /lsi/
+                      helptext="<p>leaf stability index</p>"
+                    elsif @osName[j] =~ /tii/
+                      helptext="<p>taxonomic instability index</p>" 
+                    end
+                  %>
+                  <!-- get coloring   -->
+                  <% if ! @colMod[j].nil? && @colMod[j].has_key?(@allTaxa[i])
+                       searchCol= '#' +  @colMod[j][@allTaxa[i]].map{|v| (255 - v.floor).to_s(16).rjust(2,"00") }.join 
+                     else
+                       if i % 2 == 0
+                         searchCol= '#f1f1f1'
+                       else 
+                         searchCol= '#ffffff'
+                       end
+                     end
+                  %>
+                  <% if @dropsetData[j].has_key?(@allTaxa[i])
+                       helptext+="<p>this taxon is part of a dropset of #{@dropsetData[j][@allTaxa[i]]}</p>"
+                     end
+                  %>
+                  <td align="right"  omg="help" title='<%=helptext%>' bgcolor=<%=searchCol%>>
+                    <%=  @allSearchData[j][@allTaxa[i]] %>  
+                    <% if @dropsetData[j].has_key?(@allTaxa[i]) %> 
+                      / <%= @dropsetData[j][@allTaxa[i]]%>
+                    <% end %>
+                  </td>
+                <% end %>
+              </tr>
+            <% end %>
+          </td>
         </table>
-        <% end%>
-    </td>
+      <% end%>
+      </td>
     </table>
   </tr>
   <tr>
     <td colspan=5>
-      <div class="separator_bottom_slim">
-      </div>
+      <div class="separator_bottom_slim"></div>
     </td>
-
   </tr>
 </table>
 
 <script>
-$(function()
-  {
-      $("#selectallex").click(function()
-			      {
-				  $(".excludedtaxa").attr("checked", this.checked)
-			      }
-			     );
+$(function(){
+  $("#selectallex").click(function(){
+    $(".excludedtaxa").attr("checked", this.checked)
   });
+});
 
-
-
-$(function()
-  {
-      $("#unselectalltaxa").click(function()
-				  {
-				      $(".taxonCheck").removeAttr("checked");
-				      $("#unselectalltaxa").removeAttr("checked");
-				  }
-				 );
+$(function(){
+  $("#unselectalltaxa").click(function(){
+    $(".taxonCheck").removeAttr("checked");
+    $("#unselectalltaxa").removeAttr("checked");
+  });
 });
 </script>
 

@@ -263,7 +263,7 @@ class RoguenarokController < ApplicationController
 #     File.chmod(755, tree_file)
 #     File.chmod(755, config_file)
     
-    # call tree viewer  
+    # call tree viewer
     result = "\n<SCRIPT> $(document).ready(function(){openWin('#{tree_file}','#{config_file}');});</SCRIPT>\n"
     Rails.logger.info( "#{@jobid}: result #{result}")
 

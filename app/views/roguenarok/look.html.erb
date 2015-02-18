@@ -10,39 +10,40 @@
   &nbsp;
 </div>
 
-<% if ! @error_id.eql?("")  || ! @error_email.eql?("") %>
-<table border=1 cellpadding=10  bordercolor=RED >
-  <tr>
-    <td>
-      <pre> 	
-	<%= @error_email %>  	  
-	<%= @error_id %>
-      </pre>
-    </td>
-  </tr>
-</table>
+<% if ! @error_id.eql?("") || ! @error_email.eql?("") %>
+  <table border=1 cellpadding=10  bordercolor=RED >
+    <tr>
+      <td>
+        <pre>
+          <%= @error_email %>
+          <%= @error_id %>
+        </pre>
+      </td>
+    </tr>
+  </table>
 <% end %>
 
 <% form_tag({:action => 'listJobs'},:multipart => true) do %>
-<table cellspacing="8">
-  <tr>
-    <td align="right">Enter Job ID:</td>
-    <td align="left"><%= text_field 'job_id', 'id'%> </td>
-  </tr>
-  <tr> 
-    <td align="right"> OR </td>
-    <td></td>
-  </tr>
-  <tr>
-    <td align="right"> Enter Email Address:</td>
-    <td align="left"><%= text_field 'email_address', 'email' %> </td>
-  </tr>
-  <tr>
-    <td align="left"><p>&nbsp;</p></td>
-    <td align="left" valign="top"><%= submit_tag 'Search', :name=>'search' %></td>
-  </tr>
-</table>
+  <table cellspacing="8">
+    <tr>
+      <td align="right">Enter Job ID:</td>
+      <td align="left"><%= text_field 'job_id', 'id'%> </td>
+    </tr>
+    <tr> 
+      <td align="right"> OR </td>
+      <td></td>
+    </tr>
+    <tr>
+      <td align="right"> Enter Email Address:</td>
+      <td align="left"><%= text_field 'email_address', 'email' %> </td>
+    </tr>
+    <tr>
+      <td align="left"><p>&nbsp;</p></td>
+      <td align="left" valign="top"><%= submit_tag 'Search', :name=>'search' %></td>
+    </tr>
+  </table>
 <% end%>
+
 <div class="separator_top">
   &nbsp;
 </div>
