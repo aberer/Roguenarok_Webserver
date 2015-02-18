@@ -208,7 +208,7 @@ class RoguenarokController < ApplicationController
     annotatePhyFile(File.join(jobPath,"display_tree.xml"),File.join(jobPath,"phyloNames"))
 
 
-    system "cp #{RAILS_ROOT}/public/applets/config_file #{jobPath}" 
+    system "cp #{RAILS_ROOT}/public/applets/config_file #{jobPath}"
     confFileHandle = File.open("#{jobPath}/config_file", "a")
     id = 1
     
@@ -229,39 +229,17 @@ class RoguenarokController < ApplicationController
         
         id += 1 
       end
-      
-      # @curTreeInfo = calculateRbic(File.join(["#{jobPath}", "current_tree"]), 
-      #                              pruned_taxa.length,
-      #                              File.open("#{jobPath}/taxa_file", "r").readlines.length
-      #                              )
-
     end
     confFileHandle.close()
 
-#     tree_file = "http://#{ENV['SERVER_IP']}:8080/rnr/jobs/#{@jobid}/display_tree.xml"
-#     config_file = "http://#{ENV['SERVER_IP']}:8080/rnr/jobs/#{@jobid}/config_file"
+    tree_file   = url_for :controller => 'jobs', :action => @jobid, :id => "display_tree.xml"
+    config_file = url_for :controller => 'jobs', :action => @jobid, :id => "config_file"
 
-#     tree_file = "http://#{ENV['SERVER_IP']}/rnr/jobs/#{@jobid}/display_tree.xml"
-#     config_file = "http://#{ENV['SERVER_IP']}/rnr/jobs/#{@jobid}/config_file"
-
-    tree_file = "http://rnr.h-its.org/rnr/jobs/#{@jobid}/display_tree.xml"
-    config_file = "http://rnr.h-its.org/rnr/jobs/#{@jobid}/config_file"
     Rails.logger.info( "#{@jobid}: tree_file at #{tree_file}")
     Rails.logger.info( "#{@jobid}: config_file at #{config_file}")
 
-#     file = File.open("/rnr/jobs/#{@jobid}/display_tree.xml", "w")
-
     fileA = File.join( jobPath, "display_tree.xml")
     fileB = File.join( jobPath, "config_file")
-    
-    File.chmod( 0755, fileA )
-    File.chmod( 0755, fileB )
-    File.chmod( 0755, jobPath)
-#     file = File.new("/rnr/jobs/#{@jobid}/config_file", "w")
-#     File.chmod(0755, "/rnr/jobs/#{@jobid}/config_file")
-
-#     File.chmod(755, tree_file)
-#     File.chmod(755, config_file)
     
     # call tree viewer
     result = "\n<SCRIPT> $(document).ready(function(){openWin('#{tree_file}','#{config_file}');});</SCRIPT>\n"
