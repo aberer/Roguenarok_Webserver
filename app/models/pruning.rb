@@ -62,7 +62,7 @@ class Pruning < ActiveRecord::Base
       if files.length == 0
         display_file_name += "_0"
       else
-        nextNumber = files.map{|f| f.split("_")[1].to_i}.sort![-1] + 1 
+        nextNumber = files.map{|f| f.split("_")[1].to_i}.sort![-1] + 1
         display_file_name += "_" +  nextNumber.to_s
       end
     else
@@ -70,7 +70,7 @@ class Pruning < ActiveRecord::Base
     end
     display_file_name = self.display_path + "/" + display_file_name
     
-    return display_file_name    
+    return display_file_name
   end
 
 
@@ -175,7 +175,8 @@ class Pruning < ActiveRecord::Base
     resultfiles_rnr = File.join(path,"RnR*")
     resultfiles_raxml = File.join(path,"RAxML*")
     command_save_result_files  = "mv #{resultfiles_raxml} #{results_path}\n"
-    command_save_result_files += "mv #{resultfiles_rnr} #{results_path}"
+    command_save_result_files += "mv #{resultfiles_rnr} #{results_path}\n"
+    command_save_result_files += "cp #{current_tree_file} #{display_file_name}\n"
 
     opts_rnr_prune.each_key {|k| command_rnr_prune  = command_rnr_prune+" "+k+" #{opts_rnr_prune[k]} "}
     opts_raxml.each_key {|k| command_raxml  = command_raxml+" "+k+" #{opts_raxml[k]} "}

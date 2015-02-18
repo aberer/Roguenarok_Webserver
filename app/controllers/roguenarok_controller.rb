@@ -148,7 +148,7 @@ class RoguenarokController < ApplicationController
     files = Dir.glob(File.join(path,"*"))
 
     fileHash = {}
-    files.each do |file|    
+    files.each do |file|
       digest = Digest::MD5.hexdigest(File.read(file))
       
       if ! fileHash.has_key?(digest)
