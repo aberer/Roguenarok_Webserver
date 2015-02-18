@@ -106,4 +106,3 @@ class Search < ActiveRecord::Base
     fh.close()
   end
 end
-

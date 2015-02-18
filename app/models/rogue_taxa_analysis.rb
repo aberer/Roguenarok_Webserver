@@ -54,13 +54,13 @@ class RogueTaxaAnalysis < ActiveRecord::Base
   end
 
 
-  def getFile 
+  def getFile
     file = File.join( getJobDir(), "results", "RogueNaRok_droppedRogues.#{self.jobid}_#{self.id}")
     return file 
   end
 
 
-  def validate    
+  def validate
     # validate dropset, not nil, has to be an integer
     if self.dropset.nil? || self.dropset.empty? 
       self.errors.add(:dropset, "cannot be blank!")

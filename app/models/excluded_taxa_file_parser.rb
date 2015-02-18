@@ -13,10 +13,10 @@ class ExcludedTaxaFileParser
       if stream =~ /\S+\/(\w+\.ex)$/
         @filename = $1
       end
-      @data = File.open(stream,'r').readlines      
+      @data = File.open(stream,'r').readlines
     else
       @filename = stream.original_filename
-      @data = stream.readlines      
+      @data = stream.readlines
     end
     checkFormat
   end

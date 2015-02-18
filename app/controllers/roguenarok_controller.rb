@@ -63,7 +63,7 @@ class RoguenarokController < ApplicationController
       @user.update_attributes(:email => email)
     else
       @user = User.new({:email => email, :ip => ip, :saved_subs => 0, :all_subs => 0})
-      @user.save      
+      @user.save
     end
 
     #################

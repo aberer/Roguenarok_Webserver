@@ -133,9 +133,9 @@ class Pruning < ActiveRecord::Base
       opts_raxml["-J"] = "MR"
     elsif self.threshold.eql?("mre")
       opts_raxml["-J"] = "MRE" 
-    elsif self.threshold.eql?("user")      
-      raise "expected a user-defined threshold" unless  self.user_def  != 1 
-      opts_raxml["-J"] = "T_"  + self.user_def.to_s 
+    elsif self.threshold.eql?("user")
+      raise "expected a user-defined threshold" unless  self.user_def  != 1
+      opts_raxml["-J"] = "T_"  + self.user_def.to_s
     elsif self.threshold.eql?("strict")
       opts_raxml["-J"] = "STRICT"
     else # bipartitions
@@ -153,8 +153,6 @@ class Pruning < ActiveRecord::Base
     # BUILD COMMAND SHELL FILE FOR QSUB
     shell_file = File.join(getJobDir(),"submit.sh")
     bioprogs_dir = getBioprogsDir()
-    prune = File.join(bioprogs_dir,"roguenarok","rnr-prune")
-    raxml = File.join(bioprogs_dir,"RAxML","raxmlHPC-SSE3")
 
     command_create_results_folder = "mkdir -p #{results_path}"
     system command_create_results_folder
@@ -168,9 +166,6 @@ class Pruning < ActiveRecord::Base
     command_change_directory = "cd #{path}"
 
     command_rnr_prune = File.join(bioprogs_dir,"roguenarok","rnr-prune")
-
-    command_update_working_files_after_pruning  = "cp #{pruned_bts_file } #{bootstrap_treeset_file}\n"
-    command_update_working_files_after_pruning += "cp #{pruned_best_tree_file } #{best_tree_file}\n"
 
     command_raxml = File.join(bioprogs_dir,"RAxML","raxmlHPC-SSE3")
 
@@ -192,7 +187,6 @@ class Pruning < ActiveRecord::Base
       file.write("#PBS -W umask=022\n")
       file.write(command_change_directory+"\n")
       file.write(command_rnr_prune+"\n")
-      file.write(command_update_working_files_after_pruning+"\n")
       file.write(command_raxml+"\n")
       file.write(command_update_working_files_after_raxml+"\n")
       file.write(command_save_result_files+"\n")
