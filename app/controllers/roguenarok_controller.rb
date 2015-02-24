@@ -218,7 +218,7 @@ class RoguenarokController < ApplicationController
       pruned_taxa.each do |taxon| 
         taxon.chomp!
         
-        tmp = id.to_s.rjust(8, "0")
+        tmp = "AAA"+id.to_s.rjust(2, "0")
         confFileHandle.write("species_color: #{tmp} 0xFF0000\n")
 
         system "sed 's/\\(<name>#{taxon}<\\/name><branch_length>[0-9\\.]*<\\/branch_length>\\)/\\1<taxonomy><code>#{tmp}<\\/code><\\/taxonomy>/g' #{jobPath}/display_tree.xml > #{jobPath}/tmp"
