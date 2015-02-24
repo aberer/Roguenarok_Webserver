@@ -209,10 +209,10 @@ class RoguenarokController < ApplicationController
 
 
     system "cp #{RAILS_ROOT}/public/applets/config_file #{jobPath}"
-    confFileHandle = File.open("#{jobPath}/config_file", "a")
+    confFileHandle = File.open(File.join(jobPath,"config_file"), "a")
     id = 1
     
-    if File.exists?(jobPath + "pruned_taxa")
+    if File.exists?(File.join(jobPath, "pruned_taxa"))
       pruned_taxa =  File.open(File.join(jobPath, "pruned_taxa")).readlines
 
       pruned_taxa.each do |taxon| 
@@ -229,6 +229,8 @@ class RoguenarokController < ApplicationController
         
         id += 1 
       end
+    else 
+      Rails.logger.info( "could not find file: " + File.join(jobPath, "pruned_taxa"))
     end
     confFileHandle.close()
 
@@ -409,9 +411,9 @@ class RoguenarokController < ApplicationController
     if File.exists?(File.join(job_path,"current_tree"))
       @current_tree = File.open(File.join(job_path,"current_tree"),'r').readlines.join
       
-      @curTreeInfo = calculateRbic(File.join(["#{job_path}", "current_tree"]),
-                                   File.open("#{job_path}/pruned_taxa", "r").readlines.length,
-                                   File.open("#{job_path}/taxa_file", "r").readlines.length
+      @curTreeInfo = calculateRbic(File.join(job_path, "current_tree"),
+                                   File.open(File.join(job_path,"pruned_taxa"), "r").readlines.length,
+                                   File.open(File.join(job_path,"taxa_file"), "r").readlines.length
                                   )
     end
 
