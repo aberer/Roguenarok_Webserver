@@ -1,0 +1,3 @@
+[submodule "bioprogs/RogueNaRok"]
+	path = bioprogs/RogueNaRok
+	url = https://github.com/aberer/RogueNaRok
