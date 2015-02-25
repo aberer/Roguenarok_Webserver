@@ -69,7 +69,7 @@ class TiiAnalysis < ActiveRecord::Base
 
     command_change_directory = "cd #{path}"
 
-    command_rnr_tii = File.join(getBioprogsDir(),"roguenarok","rnr-tii")
+    command_rnr_tii = File.join(getBioprogsDir(),"RogueNaRok","rnr-tii")
     opts.each_key {|k| command_rnr_tii  = command_rnr_tii+" "+k+" #{opts[k]} "}
     
     resultfiles = File.join(path,"RnR*")

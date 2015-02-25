@@ -165,7 +165,7 @@ class Pruning < ActiveRecord::Base
 		
     command_change_directory = "cd #{path}"
 
-    command_rnr_prune = File.join(bioprogs_dir,"roguenarok","rnr-prune")
+    command_rnr_prune = File.join(bioprogs_dir,"RogueNaRok","rnr-prune")
 
     command_raxml = File.join(bioprogs_dir,"RAxML","raxmlHPC-SSE3")
 

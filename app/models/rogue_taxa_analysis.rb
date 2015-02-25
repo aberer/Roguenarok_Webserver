@@ -158,7 +158,7 @@ class RogueTaxaAnalysis < ActiveRecord::Base
 
     command_change_directory = "cd #{path}"
 
-    command_roguenarok = File.join(getBioprogsDir(),"roguenarok","RogueNaRok")
+    command_roguenarok = File.join(getBioprogsDir(),"RogueNaRok","RogueNaRok")
     opts.each_key {|k| command_roguenarok  = command_roguenarok+" "+k+" #{opts[k]} "}
 
     resultfiles = File.join(path,"RogueNaRok*")

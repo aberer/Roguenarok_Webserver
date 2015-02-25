@@ -76,7 +76,7 @@ class LsiAnalysis < ActiveRecord::Base
 
     command_change_directory = "cd #{path}"
 
-    command_rnr_lsi = File.join(getBioprogsDir(),"roguenarok","rnr-lsi")
+    command_rnr_lsi = File.join(getBioprogsDir(),"RogueNaRok","rnr-lsi")
     opts.each_key {|k| command_rnr_lsi  = command_rnr_lsi + " " + k + " #{opts[k]} "}
 
     resultfiles = File.join(path,"RnR*")
