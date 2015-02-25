@@ -1,3 +1,6 @@
 [submodule "bioprogs/RogueNaRok"]
 	path = bioprogs/RogueNaRok
 	url = https://github.com/aberer/RogueNaRok
+[submodule "bioprogs/RAxML"]
+	path = bioprogs/RAxML
+	url = https://github.com/stamatak/standard-RAxML
