@@ -9,7 +9,7 @@
 #
 # It's strongly recommended to check this file into your version control system.
 
-ActiveRecord::Schema.define(:version => 20120325093830) do
+ActiveRecord::Schema.define(:version => 0) do
 
   create_table "excluded_taxons", :force => true do |t|
     t.integer  "taxon_id"
@@ -30,7 +30,7 @@ ActiveRecord::Schema.define(:version => 20120325093830) do
   end
 
   create_table "rogue_taxa_analyses", :force => true do |t|
-    t.integer  "jobid"
+    t.integer  "jobid",      :limit => 9
     t.datetime "created_at"
     t.datetime "updated_at"
   end
